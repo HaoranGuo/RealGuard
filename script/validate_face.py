@@ -10,9 +10,8 @@ import pyrealsense2 as rs
 # Points for which no depth is available (is 0) are ignored and not factored into the average.
 
 # Returns true if an average is available (at least one point has depth); false otherwise.
-def find_depth_from(depth, depth_scale, face, markup_from, markup_to):
-    data1 = depth.as_frame().get_data()
-    data1 = np.asanyarray(data1)
+def find_depth_from(depth_image, depth_scale, face, markup_from, markup_to):
+    data1 = np.asanyarray(depth_image)
 
     average_depth = 0
     n_points = 0
@@ -23,15 +22,19 @@ def find_depth_from(depth, depth_scale, face, markup_from, markup_to):
         indexx = point.x
         indexy = point.y
 
+        # Get the size of the depth image
+        col = depth_image.shape[1]
+        row = depth_image.shape[0]
+
         if indexx < 0:
             indexx = 0
         if indexy < 0:
             indexy = 0
-        if indexx > depth.get_width():
-            indexx = depth.get_width()
-        if indexy > depth.get_height():
-            indexy = depth.get_height()
-        indexk = indexy * depth.get_width() + indexx
+        if indexx > col:
+            indexx = col
+        if indexy > row:
+            indexy = row
+        indexk = indexy * col + indexx
         if indexk >= len(data1):
             indexk = len(data1)-1
         depth_in_pixels = data1[indexk]
@@ -48,13 +51,13 @@ def find_depth_from(depth, depth_scale, face, markup_from, markup_to):
 # person (and not a picture of one), using the depth data in depth_frame.
 
 # See markup_68 for an explanation of the point topology.
-def validate_face(depth_frame, depth_scale, face):
+def validate_face(depth_image, depth_scale, face):
     # Collect all the depth information for the different facial parts
     # For the ears, only one may be visible -- we take the closer one!
     left_ear_depth = 100
     right_ear_depth = 100
-    flag, right_ear_depth = find_depth_from(depth_frame, depth_scale, face, 0, 1,)
-    flag0, left_ear_depth = find_depth_from(depth_frame, depth_scale, face, 15, 16)
+    flag, right_ear_depth = find_depth_from(depth_image, depth_scale, face, 0, 1)
+    flag0, left_ear_depth = find_depth_from(depth_image, depth_scale, face, 15, 16)
     if not flag and not flag0:
         return False
     ear_depth = left_ear_depth
@@ -69,21 +72,21 @@ def validate_face(depth_frame, depth_scale, face):
         ear_depth = right_ear_depth
 
     chin_depth = 0
-    flag, chin_depth = find_depth_from(depth_frame, depth_scale, face, 7, 9)
+    flag, chin_depth = find_depth_from(depth_image, depth_scale, face, 7, 9)
     if not flag:
         return False
 
     nose_depth = 0
-    flag, nose_depth = find_depth_from(depth_frame, depth_scale, face, 29, 30)
+    flag, nose_depth = find_depth_from(depth_image, depth_scale, face, 29, 30)
     if not flag:
         return False
 
     right_eye_depth = 0
-    flag, right_eye_depth = find_depth_from(depth_frame, depth_scale, face, 36, 41)
+    flag, right_eye_depth = find_depth_from(depth_image, depth_scale, face, 36, 41)
     if not flag:
         return False
     left_eye_depth = 0
-    flag, left_eye_depth = find_depth_from(depth_frame, depth_scale, face, 42, 47)
+    flag, left_eye_depth = find_depth_from(depth_image, depth_scale, face, 42, 47)
     if not flag:
         return False
     eye_depth = 0
@@ -98,7 +101,7 @@ def validate_face(depth_frame, depth_scale, face):
         eye_depth = left_eye_depth
 
     mouth_depth = 0
-    flag, mouth_depth = find_depth_from(depth_frame, depth_scale, face, 48, 67)
+    flag, mouth_depth = find_depth_from(depth_image, depth_scale, face, 48, 67)
     if not flag:
         return False
     
@@ -142,19 +145,22 @@ def validate_face(depth_frame, depth_scale, face):
 
 
 
-
+# IS_VALIDATED = False
+# shape = 0
 # pipeline = rs.pipeline()
 # config = rs.config()
-# config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-# config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
+# config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+# # config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+# config.enable_stream(rs.stream.infrared, 1, 640, 480, rs.format.y8, 30)
 
 # profile = pipeline.start(config)
 # # get the depth sensor's depth scale
 # depth_sensor = profile.get_device().first_depth_sensor()
+# depth_sensor.set_option(rs.option.emitter_enabled, 0)
 # depth_scale = depth_sensor.get_depth_scale()
 
 # detector = dlib.get_frontal_face_detector()
-# predictor_path = '/home/haoran/GitHub/dlib-anti-spoof/data/shape_predictor_68_face_landmarks.dat'
+# predictor_path = '/home/haoran/GitHub/RealGuard/data/shape_predictor_68_face_landmarks.dat'
 # predictor = dlib.shape_predictor(predictor_path)
 
 # align_to_color = rs.align(rs.stream.color)
@@ -165,7 +171,8 @@ def validate_face(depth_frame, depth_scale, face):
 #     frames = pipeline.wait_for_frames()
 #     aligned_frames = align_to_color.process(frames)
 #     aligned_depth_frame = aligned_frames.get_depth_frame()
-#     color_frame = aligned_frames.get_color_frame()
+#     # color_frame = aligned_frames.get_color_frame()
+#     color_frame = frames.get_infrared_frame(1)
 #     if not aligned_depth_frame or not color_frame:
 #         continue
 #     depth_image = np.asanyarray(aligned_depth_frame.get_data())
@@ -173,13 +180,31 @@ def validate_face(depth_frame, depth_scale, face):
 #     win.clear_overlay()
 #     win.set_image(color_image)
 #     dets = detector(color_image)
-#     for k, d in enumerate(dets):
-#         shape = predictor(color_image, d)
-#         if validate_face(aligned_depth_frame, depth_scale, shape):
-#             print("Good face")
-#             win.add_overlay(dlib.rectangle(d.left(), d.top(), d.right(), d.bottom()), dlib.rgb_pixel(0, 255, 0))
-#         else:
-#             win.add_overlay(dlib.rectangle(d.left(), d.top(), d.right(), d.bottom()), dlib.rgb_pixel(255, 0, 0))
-#             print("Bad face")
-#         win.add_overlay(shape)
+#     if len(dets) == 0:
+#         IS_VALIDATED = False
+#         shape = 0
+#         depth_sensor.set_option(rs.option.emitter_enabled, 0)
+#     else:
+#         for k, d in enumerate(dets):
+#             if not IS_VALIDATED:
+#                 shape = predictor(color_image, d)
+#                 if shape.num_parts == 68:
+#                     IS_VALIDATED = True
+#                     depth_sensor.set_option(rs.option.emitter_enabled, 1)
+#                     print("Face validated")
+#                 else:
+#                     IS_VALIDATED = False
+#                     shape = 0
+#                     depth_sensor.set_option(rs.option.emitter_enabled, 0)
+#             else:
+#                 if validate_face(depth_image, depth_scale, shape):
+#                     print("Good face")
+#                     win.add_overlay(dlib.rectangle(d.left(), d.top(), d.right(), d.bottom()), dlib.rgb_pixel(0, 255, 0))
+#                 else:
+#                     win.add_overlay(dlib.rectangle(d.left(), d.top(), d.right(), d.bottom()), dlib.rgb_pixel(255, 0, 0))
+#                     print("Bad face")
+#                 shape = 0
+#                 IS_VALIDATED = False
+#                 depth_sensor.set_option(rs.option.emitter_enabled, 0)
+#         # win.add_overlay(shape)
         
