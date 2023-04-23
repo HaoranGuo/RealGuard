@@ -9,7 +9,7 @@ class auth(realGuard_pb2_grpc.authServicer):
 
     def do_auth(self, request, context):
 
-        f = open("./irImg.jpg",'wb')
+        f = open("./pic/irImg.jpg",'wb')
         f.write(request.ir_img)
         f.close()
 
