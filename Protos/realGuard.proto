@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package realGuardRpc;
+
+// 前端申请认证
+service auth {
+  // Sends a greeting
+  rpc do_auth (auth_request) returns (auth_result);
+}
+
+// 传输图片与深度信息
+message auth_request {
+  uint64 time_stamp = 1;
+  bytes ir_img = 2;
+  bytes depth_data = 3;
+}
+
+// 返回识别结果.
+message auth_result {
+  int32 status = 1;
+  float result = 2;
+  string name = 3;
+  string id = 4;
+  int32 instruction = 5;
+}
