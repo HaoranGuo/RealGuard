@@ -137,15 +137,50 @@ def recognize_from_3_frame_picture(ir_image_batch, depth_image,
     face_rec_model_ = dlib.face_recognition_model_v1(REC_MODEL_FILE)
     image = cv2.cvtColor(ir_image_batch[2], cv2.COLOR_GRAY2BGR)
     # face_descriptor = face_rec_model_(image, shape1)
-    face_descriptor = face_rec_model_(image, shape0)
-    IS_RECOGNIZE, name, dist = recognize_face.recognize_face(face_descriptor, CSV_FILE, DISTANCE_THRESHOLD)
+    face_descriptor = face_rec_model_.compute_face_descriptor(image, shape0)
+    IS_RECOGNIZE, name, dist = recognize_face(face_descriptor, CSV_FILE, DISTANCE_THRESHOLD)
 
     if IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE:
         return True, name, dist
     else:
         return False, None, None
 
+def recognize_from_2_frame_picture(ir_image, depth_image, 
+                                   DEPTH_SCALE, DISTANCE_THRESHOLD, 
+                                   PREDICTOR_FILE, REC_MODEL_FILE, 
+                                   CSV_FILE):
+    detector_ = dlib.get_frontal_face_detector()
+    face = detector_(ir_image, 1)
+    if len(face) == 0:
+        print("len(face) == 0")
+        return False, None, None
+    IS_PEOPLE = False
+    IS_VALIDATE = False
+    IS_RECOGNIZE = False
 
+    predictor_ = dlib.shape_predictor(PREDICTOR_FILE)
+    shape = predictor_(ir_image, face[0])
+    if shape.num_parts != 68:
+        print("shape.num_parts != 68")
+        return False, None, None
+    else:
+        IS_PEOPLE = True
+
+    if not validate_face.validate_face(depth_image, DEPTH_SCALE, shape):
+        print("not validate_face.validate_face(depth_image, DEPTH_SCALE, shape)")
+        return False, None, None
+    else:
+        IS_VALIDATE = True
+
+    face_rec_model_ = dlib.face_recognition_model_v1(REC_MODEL_FILE)
+    image = cv2.cvtColor(ir_image, cv2.COLOR_GRAY2BGR)
+    face_descriptor = face_rec_model_.compute_face_descriptor(image, shape)
+    IS_RECOGNIZE, name, dist = recognize_face(face_descriptor, CSV_FILE, DISTANCE_THRESHOLD)
+
+    if IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE:
+        return True, name, dist
+    else:
+        return False, None, None
 
 # update_database(faces_folder)
 

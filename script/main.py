@@ -1,3 +1,4 @@
+import time
 import pyrealsense2 as rs
 import cv2
 import numpy as np
@@ -11,7 +12,7 @@ faces_folder = '/home/haoran/GitHub/RealGuard/face'
 FACES_FEATURES_CSV_FILE = '/home/haoran/GitHub/RealGuard/data/face_features.csv'
 
 FACES_FATURES_DISTANCE_THRESHOLD = 0.3
-IS_DISPLAY = True
+IS_DISPLAY = False
 IS_PEOPLE = False
 IS_VALIDATE = False
 IS_RECOGNIZE = False
@@ -99,7 +100,6 @@ if __name__ == '__main__':
     # Use API Version
     else:
         while True:
-            ir_image_batch = []
             # 获取第1帧数据
             depth_sensor.set_option(rs.option.emitter_enabled, 0)
             frames = pipeline.wait_for_frames()
@@ -113,38 +113,46 @@ if __name__ == '__main__':
             if len(dets) == 0:
                 depth_sensor.set_option(rs.option.emitter_enabled, 0)
                 continue
-            ir_image_batch.append(ir_image)
             # 获取第2帧数据
             depth_sensor.set_option(rs.option.emitter_enabled, 1)
             frames = pipeline.wait_for_frames()
             aligned_frames = align_to_color.process(frames)
             ir_frame = frames.get_infrared_frame(1)
             depth_frame = aligned_frames.get_depth_frame()
-            if not ir_frame or not depth_frame:
+            if not depth_frame:
                 depth_sensor.set_option(rs.option.emitter_enabled, 0)
                 continue
-            ir_image = np.asanyarray(ir_frame.get_data())
             depth_image = np.asanyarray(depth_frame.get_data())
-            ir_image_batch.append(ir_image)
-            # 获取第3帧数据
-            depth_sensor.set_option(rs.option.emitter_enabled, 0)
-            frames = pipeline.wait_for_frames()
-            aligned_frames = align_to_color.process(frames)
-            ir_frame = frames.get_infrared_frame(1)
-            if not ir_frame:
-                depth_sensor.set_option(rs.option.emitter_enabled, 0)
-                continue
-            ir_image = np.asanyarray(ir_frame.get_data())
-            if len(dets) == 0:
-                depth_sensor.set_option(rs.option.emitter_enabled, 0)
-                continue
-            ir_image_batch.append(ir_image)
-
-            # 人脸检测
-            IS_RECOGNIZE, name, dist = recognize_face.recognize_from_3_frame_picture(ir_image_batch, depth_image, 
-                                                                                     DEPTH_SCALE, FACES_FATURES_DISTANCE_THRESHOLD, 
-                                                                                     predictor_path, face_rec_model_path, 
-                                                                                     FACES_FEATURES_CSV_FILE)
+            IS_RECOGNIZE, name, dist = recognize_face.recognize_from_2_frame_picture(ir_image, depth_image, 
+                                                                                        DEPTH_SCALE, FACES_FATURES_DISTANCE_THRESHOLD, 
+                                                                                        predictor_path, face_rec_model_path, 
+                                                                                        FACES_FEATURES_CSV_FILE)
             if IS_RECOGNIZE:
                 print("Recognized: " + name + " Distance: " + str(dist))
+            else:
+                print("Not Recognized")
+            
+            # Delay 150ms
+            time.sleep(0.15)
+            # # 获取第3帧数据
+            # depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            # frames = pipeline.wait_for_frames()
+            # aligned_frames = align_to_color.process(frames)
+            # ir_frame = frames.get_infrared_frame(1)
+            # if not ir_frame:
+            #     depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            #     continue
+            # ir_image = np.asanyarray(ir_frame.get_data())
+            # if len(dets) == 0:
+            #     depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            #     continue
+            # ir_image_batch.append(ir_image)
+
+            # # 人脸检测
+            # IS_RECOGNIZE, name, dist = recognize_face.recognize_from_3_frame_picture(ir_image_batch, depth_image, 
+            #                                                                          DEPTH_SCALE, FACES_FATURES_DISTANCE_THRESHOLD, 
+            #                                                                          predictor_path, face_rec_model_path, 
+            #                                                                          FACES_FEATURES_CSV_FILE)
+            # if IS_RECOGNIZE:
+            #     print("Recognized: " + name + " Distance: " + str(dist))
 
