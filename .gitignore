@@ -40,4 +40,16 @@
 *.bag
 *.dat
 
+# Archive
+*.zip
+*.rar
+*.gz
+*.7z
+
+# Log
+*.log
+
+# Documentation
+*.csv
+
 pic/
