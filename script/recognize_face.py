@@ -9,7 +9,7 @@ import validate_face
 predictor_path = '/home/haoran/GitHub/RealGuard/model/shape_predictor_68_face_landmarks.dat'
 face_rec_model_path = '/home/haoran/GitHub/RealGuard/model/dlib_face_recognition_resnet_model_v1.dat'
 faces_folder = '/home/haoran/GitHub/RealGuard/face'
-FACES_FEATURES_CSV_FILE = '/home/haoran/GitHub/RealGuard/model/face_features.csv'
+FACES_FEATURES_CSV_FILE = '/home/haoran/GitHub/RealGuard/data/face_features.csv'
 
 FACES_FATURES_DISTANCE_THRESHOLD = 0.3
 
@@ -182,7 +182,7 @@ def recognize_from_2_frame_picture(ir_image, depth_image,
     else:
         return False, None, None
 
-# update_database(faces_folder)
+update_database(faces_folder)
 
 # pipeline = rs.pipeline()
 # config = rs.config()

@@ -7,9 +7,6 @@ face_rec_model_path = './model/dlib_face_recognition_resnet_model_v1.dat'
 faces_folder = './face'
 FACES_FEATURES_CSV_FILE = './data/face_features.csv'
 
-# Use cuda to accelerate
-dlib.DLIB_USE_CUDA = True
-
 # Calculate running time
 start_time = time.time()
 

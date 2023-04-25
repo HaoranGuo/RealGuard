@@ -12,7 +12,7 @@ face_rec_model_path = './model/dlib_face_recognition_resnet_model_v1.dat'
 faces_folder = './face'
 FACES_FEATURES_CSV_FILE = './data/face_features.csv'
 
-FACES_FATURES_DISTANCE_THRESHOLD = 0.3
+FACES_FATURES_DISTANCE_THRESHOLD = 0.35
 # 0: Display, 1: Validate, 2: Recognize, 3: ALL
 IS_TEST = 3
 IS_PEOPLE = False
@@ -27,7 +27,7 @@ facerec = dlib.face_recognition_model_v1(face_rec_model_path)
 
 pipeline = rs.pipeline()
 config = rs.config()
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+# config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.infrared, 1, 640, 480, rs.format.y8, 30)
 
