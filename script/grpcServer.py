@@ -31,11 +31,13 @@ class auth(realGuard_pb2_grpc.authServicer):
 
         if is_recognized:
             print("Recognized: " + name)
+            return realGuard_pb2.auth_result(status = 100, result = dist, name = name, id = "Success", instruction = 0)
         else:
             print("Not Recognized")
+            return realGuard_pb2.auth_result(status = 404, result = -1, name = "Miles Guo", id = "Unslienced", instruction = 0)
 
         #fill in this result list
-        return realGuard_pb2.auth_result(status = 400, result = dist, name = name, id = "23456", instruction = 0)
+            
 
 
 def serve():

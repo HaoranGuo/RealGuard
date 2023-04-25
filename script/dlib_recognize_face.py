@@ -1,6 +1,8 @@
 import dlib
 import numpy as np
 import csv
+from PIL import Image
+import cv2
 import os
 
 class Recognize_Face:
@@ -31,8 +33,13 @@ class Recognize_Face:
             indexy = point.y
 
             # Get the size of the depth image
-            col = depth_image.shape[1]
-            row = depth_image.shape[0]
+            # col = depth_image.shape[1]
+            # row = depth_image.shape[0]
+            # print("col = ", depth_image.shape[1])
+            # print("row = ", depth_image.shape[0])
+
+            col = 640
+            row = 480
 
             if indexx < 0:
                 indexx = 0
@@ -121,14 +128,14 @@ class Recognize_Face:
         if nose_depth >= eye_depth:
             # print("nose_depth >= eye_depth")
             return False
-        if eye_depth - nose_depth > 0.07:
+        if eye_depth - nose_depth > 0.04:
             return False
         if ear_depth <= eye_depth:
             # print("ear_depth <= eye_depth")
             return False
-        if mouth_depth <= nose_depth:
-            # print("mouth_depth <= nose_depth")
-            return False
+        # if mouth_depth <= nose_depth:
+        #     print("mouth_depth <= nose_depth")
+        #     return False
         if mouth_depth > chin_depth:
             # print("mouth_depth > chin_depth")
             return False
@@ -189,10 +196,11 @@ class Recognize_Face:
         
     
     def recognize_face(self, face_descriptor, DISTANCE_THRESHOLD):
-        self.recognize_face_outside(face_descriptor, DISTANCE_THRESHOLD, self.FACES_FEATURES_CSV_FILE)
+        IS_RECOGNIZED, name, dist = self.recognize_face_outside(face_descriptor, DISTANCE_THRESHOLD, self.FACES_FEATURES_CSV_FILE)
+        return IS_RECOGNIZED, name, dist
     
 
-    def recognize_from_2_frame(self, frame_2d, frame_3d, DISTANCE_THRESHOLD):
+    def recognize_from_2_frame(self, frame_2d, frame_3d, DISTANCE_THRESHOLD, is_gray = False):
         IS_PEOPLE = False
         IS_VALIDATE = False
         IS_RECOGNIZE = False
@@ -200,20 +208,29 @@ class Recognize_Face:
         face = self.detector(frame_2d, 1)
 
         if len(face) == 0:
+            print("No face detected!")
             return False, None, None
         shape = self.predictor(frame_2d, face[0])
 
         if shape.num_parts != 68:
+            print("No face detected! (num_parts != 68)")
             return False, None, None
         else:
             IS_PEOPLE = True
 
-        if not self.validate_face(frame_3d, self.DEPTH_SCALE, shape):
+        IS_VALIDATE = self.validate_face(frame_3d, 0.001, shape)
+        if not IS_VALIDATE:
+            print("No face detected! (validate_face)")
             return False, None, None
-        else:
-            IS_VALIDATE = True
 
-        image = frame_2d
+        # Convert Gray to RGB Using PIL
+        if is_gray:
+            # image = Image.fromarray(frame_2d)
+            # image = image.convert('RGB')
+            # image = np.array(image)
+            image = cv2.cvtColor(frame_2d, cv2.COLOR_GRAY2BGR)
+        else:
+            image = frame_2d
 
         face_descriptor = self.facerec.compute_face_descriptor(image, shape)
         IS_RECOGNIZE, name, dist = self.recognize_face(face_descriptor, DISTANCE_THRESHOLD)
@@ -221,6 +238,7 @@ class Recognize_Face:
         if IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE:
             return True, name, dist
         else:
+            print("No face detected! (IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE")
             return False, None, None
         
     def read_image(self, IMAGE_PATH):

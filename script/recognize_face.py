@@ -6,10 +6,10 @@ import cv2
 import pyrealsense2 as rs
 import validate_face
 
-predictor_path = '/home/haoran/GitHub/RealGuard/data/shape_predictor_5_face_landmarks.dat'
-face_rec_model_path = '/home/haoran/GitHub/RealGuard/data/dlib_face_recognition_resnet_model_v1.dat'
+predictor_path = '/home/haoran/GitHub/RealGuard/model/shape_predictor_68_face_landmarks.dat'
+face_rec_model_path = '/home/haoran/GitHub/RealGuard/model/dlib_face_recognition_resnet_model_v1.dat'
 faces_folder = '/home/haoran/GitHub/RealGuard/face'
-FACES_FEATURES_CSV_FILE = '/home/haoran/GitHub/RealGuard/data/face_features.csv'
+FACES_FEATURES_CSV_FILE = '/home/haoran/GitHub/RealGuard/model/face_features.csv'
 
 FACES_FATURES_DISTANCE_THRESHOLD = 0.3
 

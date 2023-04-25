@@ -3,6 +3,7 @@ import pyrealsense2 as rs
 import cv2
 import numpy as np
 import dlib
+import dlib_recognize_face
 import validate_face
 import recognize_face
 
@@ -12,7 +13,8 @@ faces_folder = './face'
 FACES_FEATURES_CSV_FILE = './data/face_features.csv'
 
 FACES_FATURES_DISTANCE_THRESHOLD = 0.3
-IS_DISPLAY = False
+# 0: Display, 1: Validate, 2: Recognize, 3: ALL
+IS_TEST = 3
 IS_PEOPLE = False
 IS_VALIDATE = False
 IS_RECOGNIZE = False
@@ -25,7 +27,7 @@ facerec = dlib.face_recognition_model_v1(face_rec_model_path)
 
 pipeline = rs.pipeline()
 config = rs.config()
-# config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.infrared, 1, 640, 480, rs.format.y8, 30)
 
@@ -42,7 +44,8 @@ dets = 0
 
 if __name__ == '__main__':
     # Display Version
-    if IS_DISPLAY:
+    DRecFace = dlib_recognize_face.Recognize_Face(predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
+    if IS_TEST == 0:
         win = dlib.image_window()
         while not win.is_closed():
             frames = pipeline.wait_for_frames()
@@ -75,7 +78,7 @@ if __name__ == '__main__':
                             shape = 0
                             depth_sensor.set_option(rs.option.emitter_enabled, 0)
                     else:
-                        if validate_face.validate_face(depth_image, DEPTH_SCALE, shape):
+                        if DRecFace.validate_face(depth_image, 0.001, shape):
                             IS_VALIDATE = True
                             print("People validated")
                         else:
@@ -97,11 +100,9 @@ if __name__ == '__main__':
                     temp_shape = 0
                     depth_sensor.set_option(rs.option.emitter_enabled, 0)
 
-    # Use API Version
-    else:
+    elif IS_TEST == 1:
+        win = dlib.image_window()
         while True:
-            # 获取第1帧数据
-            depth_sensor.set_option(rs.option.emitter_enabled, 0)
             frames = pipeline.wait_for_frames()
             aligned_frames = align_to_color.process(frames)
             ir_frame = frames.get_infrared_frame(1)
@@ -109,12 +110,8 @@ if __name__ == '__main__':
                 depth_sensor.set_option(rs.option.emitter_enabled, 0)
                 continue
             ir_image = np.asanyarray(ir_frame.get_data())
-            dets = detector(ir_image, 1)
-            if len(dets) == 0:
-                depth_sensor.set_option(rs.option.emitter_enabled, 0)
-                continue
-            # 获取第2帧数据
             depth_sensor.set_option(rs.option.emitter_enabled, 1)
+
             frames = pipeline.wait_for_frames()
             aligned_frames = align_to_color.process(frames)
             ir_frame = frames.get_infrared_frame(1)
@@ -123,17 +120,87 @@ if __name__ == '__main__':
                 depth_sensor.set_option(rs.option.emitter_enabled, 0)
                 continue
             depth_image = np.asanyarray(depth_frame.get_data())
-            IS_RECOGNIZE, name, dist = recognize_face.recognize_from_2_frame_picture(ir_image, depth_image, 
-                                                                                        DEPTH_SCALE, FACES_FATURES_DISTANCE_THRESHOLD, 
-                                                                                        predictor_path, face_rec_model_path, 
-                                                                                        FACES_FEATURES_CSV_FILE)
-            if IS_RECOGNIZE:
-                print("Recognized: " + name + " Distance: " + str(dist))
+
+            dets = detector(ir_image, 1)
+            if len(dets) == 0:
+                depth_sensor.set_option(rs.option.emitter_enabled, 0)
+                continue
             else:
-                print("Not Recognized")
+                shape = predictor(ir_image, dets[0])
+                if shape.num_parts == 68:
+                    if DRecFace.validate_face(depth_image, 0.001, shape):
+                        print("People validated")
+                    else:
+                        print("People not validated")
+                else:
+                    print("People not detected")
+                depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            win.clear_overlay()
+            win.set_image(ir_image)
+            time.sleep(1)
+
+    elif IS_TEST == 2:
+        depth_sensor.set_option(rs.option.emitter_enabled, 0)
+        win = dlib.image_window()
+        while True:
+            frames = pipeline.wait_for_frames()
+            aligned_frames = align_to_color.process(frames)
+            depth_frame = aligned_frames.get_depth_frame()
+            ir_frame = frames.get_infrared_frame(1)
+            if not ir_frame:
+                continue
+            ir_image = np.asanyarray(ir_frame.get_data())
+            dets = detector(ir_image, 1)
+            if len(dets) == 0:
+                continue
+            else:
+                shape = predictor(ir_image, dets[0])
+                image = cv2.cvtColor(ir_image, cv2.COLOR_GRAY2BGR)
+                face_descriptor = facerec.compute_face_descriptor(image, shape)
+                IS_RECOGNIZE, name, dist = DRecFace.recognize_face(face_descriptor, 0.35)
+                if IS_RECOGNIZE:
+                    print("Recognized: " + name + " Distance: " + str(dist))
+                else:
+                    print("Not Recognized")
+            win.clear_overlay()
+            win.set_image(ir_image)
+
+
+    # Use API Version
+    elif IS_TEST == 3:
+        depth_sensor.set_option(rs.option.emitter_enabled, 1)
+        win = dlib.image_window()
+        while True:
+            frames = pipeline.wait_for_frames()
+            aligned_frames = align_to_color.process(frames)
+            ir_frame = frames.get_infrared_frame(1)
+            if not ir_frame:
+                depth_sensor.set_option(rs.option.emitter_enabled, 0)
+                continue
+            ir_image = np.asanyarray(ir_frame.get_data())
+            depth_sensor.set_option(rs.option.emitter_enabled, 1)
+
+            frames = pipeline.wait_for_frames()
+            aligned_frames = align_to_color.process(frames)
+            depth_frame = aligned_frames.get_depth_frame()
+            if not depth_frame:
+                depth_sensor.set_option(rs.option.emitter_enabled, 0)
+                continue
+            depth_image = np.asanyarray(depth_frame.get_data())
+            image = ir_image
+            # image = cv2.cvtColor(ir_image, cv2.COLOR_GRAY2BGR)
+            is_recognized, name, dist = DRecFace.recognize_from_2_frame(image, depth_image, 0.35, True)
+            if is_recognized:
+                print("Recognized: " + name + " Distance: " + str(dist))
+            # else:
+            #     print("Not Recognized")
             
             # Delay 150ms
-            time.sleep(0.15)
+            win.clear_overlay()
+            win.set_image(ir_image)
+            depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            time.sleep(0.2)
+            
             # # 获取第3帧数据
             # depth_sensor.set_option(rs.option.emitter_enabled, 0)
             # frames = pipeline.wait_for_frames()
