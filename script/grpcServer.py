@@ -29,6 +29,11 @@ class auth(realGuard_pb2_grpc.authServicer):
         depth = np.array(depthData)
         is_recognized, name, dist = DRecFace.recognize_from_2_frame(image_2d, depth, 0.35)
 
+        if is_recognized:
+            print("Recognized: " + name)
+        else:
+            print("Not Recognized")
+
         #fill in this result list
         return realGuard_pb2.auth_result(status = 400, result = dist, name = name, id = "23456", instruction = 0)
 
@@ -44,4 +49,6 @@ def serve():
 if __name__ == '__main__':
     DRecFace = dlib_recognize_face.Recognize_Face(predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
     logging.basicConfig()
+    print("Server is running...")
+    print("Waiting for client...")
     serve()
