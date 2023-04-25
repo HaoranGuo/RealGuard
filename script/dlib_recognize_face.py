@@ -209,19 +209,19 @@ class Recognize_Face:
 
         if len(face) == 0:
             print("No face detected!")
-            return False, None, None
+            return -1, None, None
         shape = self.predictor(frame_2d, face[0])
 
         if shape.num_parts != 68:
             print("No face detected! (num_parts != 68)")
-            return False, None, None
+            return -1, None, None
         else:
             IS_PEOPLE = True
 
         IS_VALIDATE = self.validate_face(frame_3d, 0.001, shape)
         if not IS_VALIDATE:
             print("No face detected! (validate_face)")
-            return False, None, None
+            return -2, None, None
 
         # Convert Gray to RGB Using PIL
         if is_gray:
@@ -236,10 +236,10 @@ class Recognize_Face:
         IS_RECOGNIZE, name, dist = self.recognize_face(face_descriptor, DISTANCE_THRESHOLD)
 
         if IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE:
-            return True, name, dist
+            return 1, name, dist
         else:
             print("No face detected! (IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE")
-            return False, None, None
+            return -3, None, None
         
     def read_image(self, IMAGE_PATH):
         # Use dlib to load the image as a numpy array
