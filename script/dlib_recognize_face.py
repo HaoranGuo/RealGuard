@@ -225,10 +225,10 @@ class Recognize_Face:
 
         # Convert Gray to RGB Using PIL
         if is_gray:
-            image = Image.fromarray(frame_2d)
-            image = image.convert('RGB')
+            # image = Image.fromarray(frame_2d)
+            # image = image.convert('RGB')
+            image = cv2.cvtColor(frame_2d, cv2.COLOR_GRAY2BGR)
             image = np.array(image)
-            # image = cv2.cvtColor(frame_2d, cv2.COLOR_GRAY2BGR)
         else:
             image = frame_2d
 
@@ -264,7 +264,10 @@ class Extract_Face_Feature:
 
 
     def get_128d_features_of_face(self, image_path):
-        image = dlib.load_rgb_image(image_path)
+        # image = dlib.load_rgb_image(image_path)
+        # image = Image.open(image_path)
+        image = cv2.imread(image_path)
+        image = np.array(image)
         faces = self.detector(image, 1)
 
         if len(faces) != 0:
@@ -311,6 +314,46 @@ class Extract_Face_Feature:
                 person_features = np.insert(person_features, 0, person_label, axis=0)
                 writer.writerow(person_features)
 
-
-    def update_features_csv(self):
+    def extract_features(self):
         self.extract_features_to_csv(self.FACES_FOLDER, self.FACES_FEATURES_CSV_FILE)
+
+
+    def add_face_features(self, FACES_FEATURES_CSV_FILE, path):
+        path = os.path.abspath(path)
+        for f in os.listdir(path):
+            subDir = os.path.join(path, f)
+            if not os.path.isdir(subDir):
+                continue
+            # 读取FACES_FEATURES_CSV_FILE中的人名，如果已经存在，则不再添加
+            with open(FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
+                reader = csv.reader(csvfile)
+                person_names = [row[0] for row in reader]
+            if f in person_names:
+                continue
+            else:
+                person_label = os.path.split(subDir)[-1]
+                image_paths = [os.path.join(subDir, f) for f in os.listdir(subDir)]
+                image_paths = list(filter(lambda x:os.path.isfile(x), image_paths))
+                feature_list_of_person_x = []
+                for image_path in image_paths:
+                    # 计算每一个图片的特征
+                    feature = self.get_128d_features_of_face(image_path)
+                    if feature == 0:
+                        continue
+                    
+                    feature_list_of_person_x.append(feature)
+
+                # 计算当前人脸的平均特征
+                features_mean_person_x = np.zeros(128, dtype=object, order='C')
+                if feature_list_of_person_x:
+                    features_mean_person_x = np.array(feature_list_of_person_x, dtype=object).mean(axis=0)
+
+                with open(FACES_FEATURES_CSV_FILE, "a", newline="") as csvfile:
+                    writer = csv.writer(csvfile)
+                    person_features = features_mean_person_x
+                    person_label = person_label
+                    person_features = np.insert(person_features, 0, person_label, axis=0)
+                    writer.writerow(person_features)
+
+    def add_face(self):
+        self.add_face_features(self.FACES_FEATURES_CSV_FILE, self.FACES_FOLDER)
