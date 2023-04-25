@@ -26,10 +26,9 @@ class auth(realGuard_pb2_grpc.authServicer):
 
         #auth logic
         image_2d = DRecFace.read_image("./pic/irImg.jpg")
-        depth = np.array(depthData)
-        print(depthData.shape)
-        # Get data type
-        print(type(depthData))
+        # depth = np.array(depthData)
+        # Convert from Bytes to int
+        depth = np.frombuffer(depthData, dtype=np.uint16)
         is_recognized, name, dist = DRecFace.recognize_from_2_frame(image_2d, depth, 0.35)
 
         if is_recognized:
