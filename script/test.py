@@ -192,7 +192,7 @@ if __name__ == '__main__':
             depth_image = np.asanyarray(depth_frame.get_data())
             image = ir_image
             # image = cv2.cvtColor(ir_image, cv2.COLOR_GRAY2BGR)
-            is_recognized, name, dist = DRecFace.recognize_from_2_frame(image, depth_image, 0.35, True)
+            is_recognized, name, dist = DRecFace.recognize_and_continue_learning(image, depth_image, 0.35, 0.3, True)
             if is_recognized == 1:
                 print("Recognized: " + name + " Distance: " + str(dist))
             # else:

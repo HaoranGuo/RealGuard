@@ -268,6 +268,76 @@ class Recognize_Face:
             print("No face detected! (IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE")
             return -3, None, None
         
+
+    def recognize_and_continue_learning(self, frame_2d, frame_3d, DISTANCE_THRESHOLD, LEARNING_THRESHOLD, is_gray = False):
+        IS_PEOPLE = False
+        IS_VALIDATE = False
+        IS_RECOGNIZE = False
+        
+        face = self.detector(frame_2d, 1)
+        if len(face) == 0:
+            print("No face detected!")
+            return -1, None, None
+        # Convert mmod_rectangle to dlib.rectangle
+        d = face[0]
+        face = dlib.rectangle(d.rect.left(), d.rect.top(), d.rect.right(), d.rect.bottom())
+        
+        shape = self.predictor(frame_2d, face)
+
+        if shape.num_parts != 68:
+            print("No face detected! (num_parts != 68)")
+            return -1, None, None
+        else:
+            IS_PEOPLE = True
+
+        IS_VALIDATE = self.validate_face(frame_3d, 0.001, shape)
+        if not IS_VALIDATE:
+            print("No face detected! (validate_face)")
+            return -2, None, None
+
+        # Convert Gray to RGB Using PIL
+        if is_gray:
+            # image = Image.fromarray(frame_2d)
+            # image = image.convert('RGB')
+            image = cv2.cvtColor(frame_2d, cv2.COLOR_GRAY2BGR)
+            image = np.array(image)
+        else:
+            image = frame_2d
+
+        face_descriptor = self.facerec.compute_face_descriptor(image, shape)
+        IS_RECOGNIZE, name, dist = self.recognize_face(face_descriptor, DISTANCE_THRESHOLD)
+
+        if IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE:
+            if dist <= LEARNING_THRESHOLD:
+                with open(self.FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
+                    reader = csv.reader(csvfile)
+                    person_names = []
+                    feature_arrays = []
+                    for row in reader:
+                        person_names.append(row[0])
+                        feature_arrays.append(row[1:])
+                    weight = (1 - dist) / 15
+                    for i in range(len(person_names)):
+                        if person_names[i] == name:
+                            original_feature_array = feature_arrays[i]
+                            original_feature_array = np.array(original_feature_array, dtype=np.float64)
+                            original_feature_array = original_feature_array * (1 - weight) + np.array(face_descriptor) * weight
+                            # 修改csv文件中姓名为name的特征
+                            feature_arrays[i] = original_feature_array.tolist()
+                            break
+                    # 将修改后的特征写入csv文件
+                    with open(self.FACES_FEATURES_CSV_FILE, "w", newline="") as csvfile:
+                        writer = csv.writer(csvfile)
+                        for i in range(len(person_names)):
+                            writer.writerow([person_names[i]] + feature_arrays[i])
+                    
+                    csvfile.close()
+            return 1, name, dist    
+        else:
+            print("No face detected! (IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE")
+            return -3, None, None
+
+        
     def read_image(self, IMAGE_PATH):
         # Use dlib to load the image as a numpy array
         image = dlib.load_rgb_image(IMAGE_PATH)
