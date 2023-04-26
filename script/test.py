@@ -7,6 +7,7 @@ import dlib_recognize_face
 import validate_face
 import recognize_face
 
+detect_path = './model/mmod_human_face_detector.dat'
 predictor_path = './model/shape_predictor_68_face_landmarks.dat'
 face_rec_model_path = './model/dlib_face_recognition_resnet_model_v1.dat'
 faces_folder = './face'
@@ -44,7 +45,7 @@ dets = 0
 
 if __name__ == '__main__':
     # Display Version
-    DRecFace = dlib_recognize_face.Recognize_Face(predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
+    DRecFace = dlib_recognize_face.Recognize_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
     if IS_TEST == 0:
         win = dlib.image_window()
         while not win.is_closed():
@@ -178,6 +179,8 @@ if __name__ == '__main__':
                 depth_sensor.set_option(rs.option.emitter_enabled, 0)
                 continue
             ir_image = np.asanyarray(ir_frame.get_data())
+            win.clear_overlay()
+            win.set_image(ir_image)
             depth_sensor.set_option(rs.option.emitter_enabled, 1)
 
             frames = pipeline.wait_for_frames()
@@ -190,14 +193,13 @@ if __name__ == '__main__':
             image = ir_image
             # image = cv2.cvtColor(ir_image, cv2.COLOR_GRAY2BGR)
             is_recognized, name, dist = DRecFace.recognize_from_2_frame(image, depth_image, 0.35, True)
-            if is_recognized:
+            if is_recognized == 1:
                 print("Recognized: " + name + " Distance: " + str(dist))
             # else:
             #     print("Not Recognized")
             
             # Delay 150ms
-            win.clear_overlay()
-            win.set_image(ir_image)
+            
             depth_sensor.set_option(rs.option.emitter_enabled, 0)
             time.sleep(0.2)
             

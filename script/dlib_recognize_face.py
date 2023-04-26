@@ -6,8 +6,8 @@ import cv2
 import os
 
 class Recognize_Face:
-    def __init__(self, LANDMARKS_MODEL, ROCOGNITION_RESNET_MODEL, FACES_FEATURES_CSV_FILE):
-        self.detector = dlib.get_frontal_face_detector()
+    def __init__(self, CNN_DETECT_MODEL, LANDMARKS_MODEL, ROCOGNITION_RESNET_MODEL, FACES_FEATURES_CSV_FILE):
+        self.detector = dlib.cnn_face_detection_model_v1(CNN_DETECT_MODEL)
         self.predictor = dlib.shape_predictor(LANDMARKS_MODEL)
         self.facerec = dlib.face_recognition_model_v1(ROCOGNITION_RESNET_MODEL)
         self.FACES_FEATURES_CSV_FILE = FACES_FEATURES_CSV_FILE
@@ -66,27 +66,42 @@ class Recognize_Face:
     def validate_face(self, depth_image, depth_scale, face):
         # Collect all the depth information for the different facial parts
         # For the ears, only one may be visible -- we take the closer one!
-        left_ear_depth = 100
-        right_ear_depth = 100
-        flag, right_ear_depth = self.find_depth_from(depth_image, depth_scale, face, 0, 1)
-        flag0, left_ear_depth = self.find_depth_from(depth_image, depth_scale, face, 15, 16)
+        # left_ear_depth = 100
+        # right_ear_depth = 100
+        # flag, right_ear_depth = self.find_depth_from(depth_image, depth_scale, face, 0, 1)
+        # flag0, left_ear_depth = self.find_depth_from(depth_image, depth_scale, face, 15, 16)
+        # if not flag and not flag0:
+        #     return False
+        # ear_depth = left_ear_depth
+        # if right_ear_depth != 0 and left_ear_depth != 0:
+        #     if right_ear_depth < left_ear_depth:
+        #         ear_depth = right_ear_depth
+        #     else:
+        #         ear_depth = left_ear_depth
+        # elif right_ear_depth == 0:
+        #     ear_depth = left_ear_depth
+        # elif left_ear_depth == 0:
+        #     ear_depth = right_ear_depth
+
+        # chin_depth = 0
+        # flag, chin_depth = self.find_depth_from(depth_image, depth_scale, face, 7, 9)
+        # if not flag:
+        #     return False
+        eyebrow_depth = 0
+        flag, left_eyebrow_depth = self.find_depth_from(depth_image, depth_scale, face, 17, 21)
+        flag0, right_eyebrow_depth = self.find_depth_from(depth_image, depth_scale, face, 22, 26)
         if not flag and not flag0:
             return False
-        ear_depth = left_ear_depth
-        if right_ear_depth != 0 and left_ear_depth != 0:
-            if right_ear_depth < left_ear_depth:
-                ear_depth = right_ear_depth
+        if left_eyebrow_depth != 0 and right_eyebrow_depth != 0:
+            if left_eyebrow_depth < right_eyebrow_depth:
+                eyebrow_depth = left_eyebrow_depth
             else:
-                ear_depth = left_ear_depth
-        elif right_ear_depth == 0:
-            ear_depth = left_ear_depth
-        elif left_ear_depth == 0:
-            ear_depth = right_ear_depth
-
-        chin_depth = 0
-        flag, chin_depth = self.find_depth_from(depth_image, depth_scale, face, 7, 9)
-        if not flag:
-            return False
+                eyebrow_depth = right_eyebrow_depth
+        elif left_eyebrow_depth == 0:
+            eyebrow_depth = right_eyebrow_depth
+        elif right_eyebrow_depth == 0:
+            eyebrow_depth = left_eyebrow_depth
+        
 
         nose_depth = 0
         flag, nose_depth = self.find_depth_from(depth_image, depth_scale, face, 29, 30)
@@ -125,32 +140,41 @@ class Recognize_Face:
         # These heuristics are fairly basic but nonetheless serve to illustrate the point that
         # depth data can effectively be used to distinguish between a person and a picture of a
         # person...
-        if nose_depth >= eye_depth:
-            print("nose_depth >= eye_depth")
+        if nose_depth >= eyebrow_depth:
+            print("nose_depth >= eyebrow_depth")
             return False
-        if eye_depth - nose_depth > 0.04:
+        if eye_depth - nose_depth > 0.08:
+            print("eye_depth - nose_depth > 0.08")
             return False
-        if ear_depth <= eye_depth:
-            print("ear_depth <= eye_depth")
-            return False
+        # if eye_depth - nose_depth < 0.02:
+        #     print("eye_depth - nose_depth < 0.02")
+        #     return False
+        # if ear_depth <= eye_depth:
+        #     print("ear_depth <= eye_depth")
+        #     return False
         # if mouth_depth <= nose_depth:
         #     print("mouth_depth <= nose_depth")
         #     return False
-        if mouth_depth > chin_depth:
-            print("mouth_depth > chin_depth")
+        if mouth_depth > eye_depth:
+            print("mouth_depth > eye_depth")
             return False
+        # if mouth_depth - nose_depth < 0.02:
+        #     print("mouth_depth - nose_depth < 0.02")
+        #     return False
         
         # All the distances, collectively, should not span a range that makes no sense. I.e.,
         # if the face accounts for more than 20cm of depth, or less than 2cm, then something's
         # not kosher!
 
-        x = max([nose_depth, mouth_depth, chin_depth, eye_depth, ear_depth])
-        n = min([nose_depth, mouth_depth, chin_depth, eye_depth, ear_depth])
+        # x = max([nose_depth, mouth_depth, chin_depth, eye_depth, ear_depth])
+        # n = min([nose_depth, mouth_depth, chin_depth, eye_depth, ear_depth])
+        x = max([nose_depth, mouth_depth, eye_depth, eyebrow_depth])
+        n = min([nose_depth, mouth_depth, eye_depth, eyebrow_depth])
         if x - n > 0.20:
             print("x - n > 0.20")
             return False
         if x - n < 0.01:
-            print("x - n < 0.02")
+            print("x - n < 0.01")
             return False
         
         return True
@@ -206,11 +230,14 @@ class Recognize_Face:
         IS_RECOGNIZE = False
         
         face = self.detector(frame_2d, 1)
-
         if len(face) == 0:
             print("No face detected!")
             return -1, None, None
-        shape = self.predictor(frame_2d, face[0])
+        # Convert mmod_rectangle to dlib.rectangle
+        d = face[0]
+        face = dlib.rectangle(d.rect.left(), d.rect.top(), d.rect.right(), d.rect.bottom())
+        
+        shape = self.predictor(frame_2d, face)
 
         if shape.num_parts != 68:
             print("No face detected! (num_parts != 68)")

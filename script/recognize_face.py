@@ -182,7 +182,7 @@ def recognize_from_2_frame_picture(ir_image, depth_image,
     else:
         return False, None, None
 
-update_database(faces_folder)
+# update_database(faces_folder)
 
 # pipeline = rs.pipeline()
 # config = rs.config()
