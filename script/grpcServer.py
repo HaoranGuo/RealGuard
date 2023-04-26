@@ -6,6 +6,7 @@ import os,time
 import numpy as np
 import dlib_recognize_face
 
+detect_path = './model/mmod_human_face_detector.dat'
 predictor_path = './model/shape_predictor_68_face_landmarks.dat'
 face_rec_model_path = './model/dlib_face_recognition_resnet_model_v1.dat'
 faces_folder = './face'
@@ -66,7 +67,7 @@ def serve():
 
 
 if __name__ == '__main__':
-    DRecFace = dlib_recognize_face.Recognize_Face(predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
+    DRecFace = dlib_recognize_face.Recognize_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
     logging.basicConfig()
     print("Server is running...")
     print("Waiting for client...")
