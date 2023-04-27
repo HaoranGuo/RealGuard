@@ -4,8 +4,6 @@ import cv2
 import numpy as np
 import dlib
 import dlib_recognize_face
-import validate_face
-import recognize_face
 
 detect_path = './model/mmod_human_face_detector.dat'
 predictor_path = './model/shape_predictor_68_face_landmarks.dat'
@@ -59,47 +57,47 @@ if __name__ == '__main__':
             ir_image = np.asanyarray(ir_frame.get_data())
             win.clear_overlay()
             win.set_image(ir_image)
-            dets = detector(ir_image, 1)
-            if len(dets) == 0:
-                IS_PEOPLE = False
-                IS_VALIDATE = False
-                IS_RECOGNIZE = False
-                depth_sensor.set_option(rs.option.emitter_enabled, 0)
-                continue
-            elif len(dets) > 0 or IS_PEOPLE:
-                if not IS_VALIDATE:
-                    if not IS_PEOPLE:
-                        shape = predictor(ir_image, dets[0])
-                        if shape.num_parts == 68:
-                            IS_PEOPLE = True
-                            depth_sensor.set_option(rs.option.emitter_enabled, 1)
-                            print("People detected")
-                        else:
-                            IS_PEOPLE = False
-                            shape = 0
-                            depth_sensor.set_option(rs.option.emitter_enabled, 0)
-                    else:
-                        if DRecFace.validate_face(depth_image, 0.001, shape):
-                            IS_VALIDATE = True
-                            print("People validated")
-                        else:
-                            IS_VALIDATE = False
-                        IS_PEOPLE = False
-                        depth_sensor.set_option(rs.option.emitter_enabled, 0)
-                else:
-                    shape = predictor(ir_image, dets[0])
-                    image = cv2.cvtColor(ir_image, cv2.COLOR_GRAY2BGR)
-                    face_descriptor = facerec.compute_face_descriptor(image, shape)
-                    IS_RECOGNIZE, name, dist = recognize_face.recognize_face(face_descriptor, FACES_FEATURES_CSV_FILE, FACES_FATURES_DISTANCE_THRESHOLD)
-                    if IS_RECOGNIZE:
-                        print("Recognized: " + name + " Distance: " + str(dist))
-                    else:
-                        print("Not Recognized")
-                    IS_VALIDATE = False
-                    IS_PEOPLE = False
-                    IS_RECOGNIZE = False
-                    temp_shape = 0
-                    depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            # dets = detector(ir_image, 1)
+            # if len(dets) == 0:
+            #     IS_PEOPLE = False
+            #     IS_VALIDATE = False
+            #     IS_RECOGNIZE = False
+            #     depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            #     continue
+            # elif len(dets) > 0 or IS_PEOPLE:
+            #     if not IS_VALIDATE:
+            #         if not IS_PEOPLE:
+            #             shape = predictor(ir_image, dets[0])
+            #             if shape.num_parts == 68:
+            #                 IS_PEOPLE = True
+            #                 depth_sensor.set_option(rs.option.emitter_enabled, 1)
+            #                 print("People detected")
+            #             else:
+            #                 IS_PEOPLE = False
+            #                 shape = 0
+            #                 depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            #         else:
+            #             if DRecFace.validate_face(depth_image, 0.001, shape):
+            #                 IS_VALIDATE = True
+            #                 print("People validated")
+            #             else:
+            #                 IS_VALIDATE = False
+            #             IS_PEOPLE = False
+            #             depth_sensor.set_option(rs.option.emitter_enabled, 0)
+            #     else:
+            #         shape = predictor(ir_image, dets[0])
+            #         image = cv2.cvtColor(ir_image, cv2.COLOR_GRAY2BGR)
+            #         face_descriptor = facerec.compute_face_descriptor(image, shape)
+            #         IS_RECOGNIZE, name, dist = recognize_face.recognize_face(face_descriptor, FACES_FEATURES_CSV_FILE, FACES_FATURES_DISTANCE_THRESHOLD)
+            #         if IS_RECOGNIZE:
+            #             print("Recognized: " + name + " Distance: " + str(dist))
+            #         else:
+            #             print("Not Recognized")
+            #         IS_VALIDATE = False
+            #         IS_PEOPLE = False
+            #         IS_RECOGNIZE = False
+            #         temp_shape = 0
+            #         depth_sensor.set_option(rs.option.emitter_enabled, 0)
 
     elif IS_TEST == 1:
         win = dlib.image_window()
