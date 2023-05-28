@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0frealGuard.proto\x12\x0crealGuardRpc\"F\n\x0c\x61uth_request\x12\x12\n\ntime_stamp\x18\x01 \x01(\x04\x12\x0e\n\x06ir_img\x18\x02 \x01(\x0c\x12\x12\n\ndepth_data\x18\x03 \x01(\x0c\"\\\n\x0b\x61uth_result\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x0e\n\x06result\x18\x02 \x01(\x02\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\n\n\x02id\x18\x04 \x01(\t\x12\x13\n\x0binstruction\x18\x05 \x01(\x05\x32H\n\x04\x61uth\x12@\n\x07\x64o_auth\x12\x1a.realGuardRpc.auth_request\x1a\x19.realGuardRpc.auth_resultb\x06proto3'
+  serialized_pb=b'\n\x0frealGuard.proto\x12\x0crealGuardRpc\"F\n\x0c\x61uth_request\x12\x12\n\ntime_stamp\x18\x01 \x01(\x04\x12\x0e\n\x06ir_img\x18\x02 \x01(\x0c\x12\x12\n\ndepth_data\x18\x03 \x01(\x0c\"\\\n\x0b\x61uth_result\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x0e\n\x06result\x18\x02 \x01(\x02\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\n\n\x02id\x18\x04 \x01(\t\x12\x13\n\x0binstruction\x18\x05 \x01(\x05\"Q\n\x10register_request\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x11\n\tstudentId\x18\x02 \x01(\t\x12\x0e\n\x06ir_img\x18\x03 \x01(\x0c\x12\x0c\n\x04take\x18\x04 \x01(\x08\"?\n\x0fregister_result\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x0e\n\x06result\x18\x02 \x01(\x02\x12\x0c\n\x04take\x18\x03 \x01(\x08\x32H\n\x04\x61uth\x12@\n\x07\x64o_auth\x12\x1a.realGuardRpc.auth_request\x1a\x19.realGuardRpc.auth_result2Y\n\x08register\x12M\n\x0cpic_register\x12\x1e.realGuardRpc.register_request\x1a\x1d.realGuardRpc.register_resultb\x06proto3'
 )
 
 
@@ -130,8 +130,109 @@ _AUTH_RESULT = _descriptor.Descriptor(
   serialized_end=197,
 )
 
+
+_REGISTER_REQUEST = _descriptor.Descriptor(
+  name='register_request',
+  full_name='realGuardRpc.register_request',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='realGuardRpc.register_request.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='studentId', full_name='realGuardRpc.register_request.studentId', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='ir_img', full_name='realGuardRpc.register_request.ir_img', index=2,
+      number=3, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='take', full_name='realGuardRpc.register_request.take', index=3,
+      number=4, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=199,
+  serialized_end=280,
+)
+
+
+_REGISTER_RESULT = _descriptor.Descriptor(
+  name='register_result',
+  full_name='realGuardRpc.register_result',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='status', full_name='realGuardRpc.register_result.status', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='result', full_name='realGuardRpc.register_result.result', index=1,
+      number=2, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='take', full_name='realGuardRpc.register_result.take', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=282,
+  serialized_end=345,
+)
+
 DESCRIPTOR.message_types_by_name['auth_request'] = _AUTH_REQUEST
 DESCRIPTOR.message_types_by_name['auth_result'] = _AUTH_RESULT
+DESCRIPTOR.message_types_by_name['register_request'] = _REGISTER_REQUEST
+DESCRIPTOR.message_types_by_name['register_result'] = _REGISTER_RESULT
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 auth_request = _reflection.GeneratedProtocolMessageType('auth_request', (_message.Message,), {
@@ -148,6 +249,20 @@ auth_result = _reflection.GeneratedProtocolMessageType('auth_result', (_message.
   })
 _sym_db.RegisterMessage(auth_result)
 
+register_request = _reflection.GeneratedProtocolMessageType('register_request', (_message.Message,), {
+  'DESCRIPTOR' : _REGISTER_REQUEST,
+  '__module__' : 'realGuard_pb2'
+  # @@protoc_insertion_point(class_scope:realGuardRpc.register_request)
+  })
+_sym_db.RegisterMessage(register_request)
+
+register_result = _reflection.GeneratedProtocolMessageType('register_result', (_message.Message,), {
+  'DESCRIPTOR' : _REGISTER_RESULT,
+  '__module__' : 'realGuard_pb2'
+  # @@protoc_insertion_point(class_scope:realGuardRpc.register_result)
+  })
+_sym_db.RegisterMessage(register_result)
+
 
 
 _AUTH = _descriptor.ServiceDescriptor(
@@ -157,8 +272,8 @@ _AUTH = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=199,
-  serialized_end=271,
+  serialized_start=347,
+  serialized_end=419,
   methods=[
   _descriptor.MethodDescriptor(
     name='do_auth',
@@ -174,5 +289,31 @@ _AUTH = _descriptor.ServiceDescriptor(
 _sym_db.RegisterServiceDescriptor(_AUTH)
 
 DESCRIPTOR.services_by_name['auth'] = _AUTH
+
+
+_REGISTER = _descriptor.ServiceDescriptor(
+  name='register',
+  full_name='realGuardRpc.register',
+  file=DESCRIPTOR,
+  index=1,
+  serialized_options=None,
+  create_key=_descriptor._internal_create_key,
+  serialized_start=421,
+  serialized_end=510,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='pic_register',
+    full_name='realGuardRpc.register.pic_register',
+    index=0,
+    containing_service=None,
+    input_type=_REGISTER_REQUEST,
+    output_type=_REGISTER_RESULT,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_REGISTER)
+
+DESCRIPTOR.services_by_name['register'] = _REGISTER
 
 # @@protoc_insertion_point(module_scope)

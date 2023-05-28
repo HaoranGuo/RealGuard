@@ -58,10 +58,39 @@ class auth(realGuard_pb2_grpc.authServicer):
         #fill in this result list
             
 
+class register(realGuard_pb2_grpc.registerServicer):
+    def __init__(self) -> None:
+        pass
+
+    def pic_register(self, request, context):
+        #ir Img
+        f = open("./pic/irImg_toRegister.jpg",'wb')
+        f.write(request.ir_img)
+        f.close()
+
+        candidateName : str= request.name
+        cadidateId : str = request.studentId
+
+        #不采纳时仅作验证
+        isPicTaken : bool = request.take
+
+
+
+        #logic to be compeleted
+
+
+        #return the result
+        #其中result即为dist，当照片检测出不合法、无法操作时result应为-1
+        return realGuard_pb2.register_result(status = 400, result = -1, take = isPicTaken)
+
+        
+
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     realGuard_pb2_grpc.add_authServicer_to_server(auth(), server)
+    realGuard_pb2_grpc.add_registerServicer_to_server(register(), server)
     server.add_insecure_port('[::]:5051')
     server.start()
     server.wait_for_termination()

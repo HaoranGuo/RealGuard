@@ -8,6 +8,10 @@ service auth {
   rpc do_auth (auth_request) returns (auth_result);
 }
 
+service register {
+  rpc pic_register (register_request) returns (register_result);
+}
+
 // 传输图片与深度信息
 message auth_request {
   uint64 time_stamp = 1;
@@ -22,4 +26,18 @@ message auth_result {
   string name = 3;
   string id = 4;
   int32 instruction = 5;
+}
+
+//录入照片
+message register_request {
+  string name = 1;
+  string studentId = 2;
+  bytes ir_img = 3;
+  bool take = 4;
+}
+
+message register_result {
+  int32 status = 1;
+  float result = 2;
+  bool take = 3;
 }
