@@ -5,6 +5,7 @@ import logging
 import os,time
 import numpy as np
 import dlib_recognize_face
+import cv2
 
 detect_path = './model/mmod_human_face_detector.dat'
 predictor_path = './model/shape_predictor_68_face_landmarks.dat'
@@ -74,14 +75,32 @@ class register(realGuard_pb2_grpc.registerServicer):
         #不采纳时仅作验证
         isPicTaken : bool = request.take
 
-
-
+        image = cv2.imread("./pic/irImg_toRegister.jpg")
+        # 如果为灰度图则转为RGB
+        if len(image.shape) == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        isreg, isnew, dist = DRegFace.register_face(image, candidateName, cadidateId)
         #logic to be compeleted
-
+        if isreg:
+            isPicTaken = True
+            if isnew:
+                status_ = 100
+                dist_ = 0
+            else:
+                status_ = 101
+                dist_ = dist
+        else:
+            isPicTaken = False
+            status_ = 400
+            dist_ = -1
 
         #return the result
-        #其中result即为dist，当照片检测出不合法、无法操作时result应为-1
-        return realGuard_pb2.register_result(status = 400, result = -1, take = isPicTaken)
+        #status说明：
+        #首次录入：100
+        #再次录入：101
+        #不合法：400
+        #其中result即为dist，当照片检测出不合法、无法操作时result应为-1，当照片为首次录入时，返回0
+        return realGuard_pb2.register_result(status = status_, result = dist_, take = isPicTaken)
 
         
 
@@ -98,6 +117,7 @@ def serve():
 
 if __name__ == '__main__':
     DRecFace = dlib_recognize_face.Recognize_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
+    DRegFace = dlib_recognize_face.Register_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE, faces_folder)
     logging.basicConfig()
     print("Server is running...")
     print("Waiting for client...")
