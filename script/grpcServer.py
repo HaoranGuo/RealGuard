@@ -38,7 +38,7 @@ class auth(realGuard_pb2_grpc.authServicer):
         # Convert from Bytes to int
         depth = np.frombuffer(depthData, dtype=np.uint16)
         # is_recognized, name, dist = DRecFace.recognize_from_2_frame(image_2d, depth, 0.35)
-        is_recognized, name, id, dist = DRecFace.recognize_and_continue_learning(image_2d, depth, 0.35, 0.3)
+        is_recognized, name, id, dist = DRecFace.recognize_from_2_frame(image_2d, depth, 0.35, 0.3)
 
         if is_recognized == 1:
             print("Recognized: " + name + " " + id + " " + str(dist))
