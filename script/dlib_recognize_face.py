@@ -195,34 +195,58 @@ class Recognize_Face:
         return dist
 
 
-    def recognize_face_outside(self, face_descriptor, DISTANCE_THRESHOLD, csv_file):
+    def recognize_face_outside(self, face_descriptor, DISTANCE_THRESHOLD, csv_file, isWrite = False):
         database = []
-        name = ""
+        name = ''
+        id = ''
         dist = 0
         with open(csv_file, "r") as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
-                database.append((row[0], row[6:]))
+                database.append((row[0], row[1], row[2], row[3], row[4], row[5], row[6:]))
+        csvfile.close()
         
         face_feature_distance_list = []
         for face in database:
-            dist = self.get_euclidean_distance(face_descriptor, face[1])
+            dist = self.get_euclidean_distance(face_descriptor, face[6])
             dist = round(dist, 4)
             if dist < DISTANCE_THRESHOLD:
-                face_feature_distance_list.append((face[0], dist))
+                face_feature_distance_list.append((face[0], face[1], dist))
         
         if len(face_feature_distance_list) == 0:
-            return False, name, dist
+            return False, name, id, dist
         else:
             face_feature_distance_list.sort(key=lambda x:x[1])
             name = face_feature_distance_list[0][0]
-            dist = face_feature_distance_list[0][1]
-            return True, name, dist
+            id = face_feature_distance_list[0][1]
+            dist = face_feature_distance_list[0][2]
+            for i in range(len(database)):
+                person = database[i]
+                if person[0] == name:
+                    database[i][3] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    database[i][5] = str(int(person[5]) + 1)
+                    if isWrite:
+                        old_feature = person[6]
+                        old_feature = np.array(old_feature, dtype=np.float64)
+                        weight = (1 - dist) / 15
+                        new_feature = old_feature * (1 - weight) + np.array(face_descriptor) * weight
+                        database[i][6] = new_feature.tolist()
+                    break
+            with open(csv_file, "w", newline="") as csvfile:
+                writer = csv.writer(csvfile)
+                for person in database:
+                    writer.writerow(person)
+                csvfile.close()
+            return True, name, id, dist
         
     
     def recognize_face(self, face_descriptor, DISTANCE_THRESHOLD):
-        IS_RECOGNIZED, name, dist = self.recognize_face_outside(face_descriptor, DISTANCE_THRESHOLD, self.FACES_FEATURES_CSV_FILE)
-        return IS_RECOGNIZED, name, dist
+        IS_RECOGNIZED, name, id, dist = self.recognize_face_outside(face_descriptor, DISTANCE_THRESHOLD, self.FACES_FEATURES_CSV_FILE, False)
+        return IS_RECOGNIZED, name, id, dist
+    
+    def recognize_face_and_learn(self, face_descriptor, DISTANCE_THRESHOLD):
+        IS_RECOGNIZED, name, id, dist = self.recognize_face_outside(face_descriptor, DISTANCE_THRESHOLD, self.FACES_FEATURES_CSV_FILE, True)
+        return IS_RECOGNIZED, name, id, dist
     
 
     def recognize_from_2_frame(self, frame_2d, frame_3d, DISTANCE_THRESHOLD, is_gray = False):
@@ -586,10 +610,11 @@ class Register_Face:
                             old_feature = np.array(feature_arr[i], dtype=np.float64)
                             
                             added_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                            recognized_time = added_time
                             # 两个feature加权平均
                             new_feature = (feature + old_feature * pic_cnt) / (pic_cnt + 1)
                             pic_cnt += 1
-                            person_info = [name_arr[i], id_arr[i], added_time, rt_arr[i], str(pic_cnt), rts_arr[i]]
+                            person_info = [name_arr[i], id_arr[i], added_time, recognized_time, str(pic_cnt), rts_arr[i]]
                             # new_feature = str(new_feature)
                             new_feature = np.array(new_feature, dtype=object)
                             person_features = np.insert(new_feature, 0, person_info, axis=0)
