@@ -545,7 +545,8 @@ class Register_Face:
                     csvfile.close()
                     return False, False, -1
                 writer = csv.writer(csvfile)
-                person_info = [name, row_id, added_time, recognized_time, pic_cnt, recognized_times]
+                person_info = [name, row_id, added_time, recognized_time, str(pic_cnt), str(recognized_times)]
+                feature = str(feature)
                 person_features = np.insert(feature, 0, person_info, axis=0)
                 writer.writerow(person_features)
                 print("Add " + name + " successfully.")
@@ -582,7 +583,8 @@ class Register_Face:
                         # 两个feature加权平均
                         new_feature = (feature + old_feature * pic_cnt) / (pic_cnt + 1)
                         pic_cnt += 1
-                        person_info = [name_arr[i], id_arr[i], added_time, rt_arr[i], pic_cnt, rts_arr[i]]
+                        person_info = [name_arr[i], id_arr[i], added_time, rt_arr[i], str(pic_cnt), rts_arr[i]]
+                        new_feature = str(new_feature)
                         person_features = np.insert(new_feature, 0, person_info, axis=0)
                         writer.writerow(person_features)
                     else:
