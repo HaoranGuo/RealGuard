@@ -13,7 +13,7 @@ FACES_FEATURES_CSV_FILE = './data/face_features.csv'
 
 FACES_FATURES_DISTANCE_THRESHOLD = 0.35
 # 0: Display, 1: Validate, 2: Recognize, 3: ALL
-IS_TEST = 3
+IS_TEST = 4
 IS_PEOPLE = False
 IS_VALIDATE = False
 IS_RECOGNIZE = False
@@ -21,22 +21,23 @@ IS_CONTINUOUS = False
 RECOGNIZED_TIMES = 4
 
 detector = dlib.get_frontal_face_detector()
+# detector = dlib.cnn_face_detection_model_v1(detect_path)
 predictor = dlib.shape_predictor(predictor_path)
 facerec = dlib.face_recognition_model_v1(face_rec_model_path)
 
-pipeline = rs.pipeline()
-config = rs.config()
-# config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.infrared, 1, 640, 480, rs.format.y8, 30)
+# pipeline = rs.pipeline()
+# config = rs.config()
+# # config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+# config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+# config.enable_stream(rs.stream.infrared, 1, 640, 480, rs.format.y8, 30)
 
-profile = pipeline.start(config)
-# get the depth sensor's depth scale
-depth_sensor = profile.get_device().first_depth_sensor()
-depth_sensor.set_option(rs.option.emitter_enabled, 0)
-DEPTH_SCALE = depth_sensor.get_depth_scale()
+# profile = pipeline.start(config)
+# # get the depth sensor's depth scale
+# depth_sensor = profile.get_device().first_depth_sensor()
+# depth_sensor.set_option(rs.option.emitter_enabled, 0)
+# DEPTH_SCALE = depth_sensor.get_depth_scale()
 
-align_to_color = rs.align(rs.stream.color)
+# align_to_color = rs.align(rs.stream.color)
 
 shape = 0
 dets = 0
@@ -223,3 +224,19 @@ if __name__ == '__main__':
             # if IS_RECOGNIZE:
             #     print("Recognized: " + name + " Distance: " + str(dist))
 
+    elif IS_TEST == 4:
+        test_img = cv2.imread('./face/sb/7d28a2f801b3b4e2bd87f89711327169.png')
+        # Convert to RGB
+        test_img = cv2.cvtColor(test_img, cv2.COLOR_BGR2RGB)
+        test_img = np.array(test_img)
+        dets = detector(test_img, 1)
+        if len(dets) == 0:
+            print("No Face Detected")
+        else:
+            shape = predictor(test_img, dets[0])
+            face_descriptor = facerec.compute_face_descriptor(test_img, shape)
+            IS_RECOGNIZE, name, id, dist = DRecFace.recognize_face_and_learn(face_descriptor, 0.35)
+            if IS_RECOGNIZE:
+                print("Recognized: " + name + ' id:' + id + " Distance: " + str(dist))
+            else:
+                print("Not Recognized")

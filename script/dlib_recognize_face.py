@@ -220,21 +220,35 @@ class Recognize_Face:
             name = face_feature_distance_list[0][0]
             id = face_feature_distance_list[0][1]
             dist = face_feature_distance_list[0][2]
+            data_list = []
             for i in range(len(database)):
                 person = database[i]
                 if person[0] == name:
-                    database[i][3] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                    database[i][5] = str(int(person[5]) + 1)
+                    new_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    new_rtimes = str(int(person[5]) + 1)
+                    i1 = person[0]
+                    i2 = person[1]
+                    i3 = person[2]
+                    i4 = new_time
+                    i5 = person[4]
+                    i6 = new_rtimes
                     if isWrite:
                         old_feature = person[6]
                         old_feature = np.array(old_feature, dtype=np.float64)
                         weight = (1 - dist) / 15
                         new_feature = old_feature * (1 - weight) + np.array(face_descriptor) * weight
-                        database[i][6] = new_feature.tolist()
-                    break
+                        new_feature = new_feature.tolist()
+                        new_list = [i1, i2, i3, i4, i5, i6] + new_feature
+                    else:
+                        i7 = np.array(person[6])
+                        new_list = np.insert(i7, 0, [i1, i2, i3, i4, i5, i6], axis=0)
+                    data_list.append(new_list)
+
+                else:
+                    data_list.append(person)
             with open(csv_file, "w", newline="") as csvfile:
                 writer = csv.writer(csvfile)
-                for person in database:
+                for person in data_list:
                     writer.writerow(person)
                 csvfile.close()
             return True, name, id, dist
@@ -257,7 +271,7 @@ class Recognize_Face:
         face = self.detector(frame_2d, 1)
         if len(face) == 0:
             print("No face detected!")
-            return -1, None, None
+            return -1, None, None, None
         # Convert mmod_rectangle to dlib.rectangle
         d = face[0]
         face = dlib.rectangle(d.rect.left(), d.rect.top(), d.rect.right(), d.rect.bottom())
@@ -266,14 +280,14 @@ class Recognize_Face:
 
         if shape.num_parts != 68:
             print("No face detected! (num_parts != 68)")
-            return -1, None, None
+            return -1, None, None, None
         else:
             IS_PEOPLE = True
 
         IS_VALIDATE = self.validate_face(frame_3d, 0.001, shape)
         if not IS_VALIDATE:
             print("No face detected! (validate_face)")
-            return -2, None, None
+            return -2, None, None, None
 
         # Convert Gray to RGB Using PIL
         if is_gray:
@@ -285,13 +299,13 @@ class Recognize_Face:
             image = frame_2d
 
         face_descriptor = self.facerec.compute_face_descriptor(image, shape)
-        IS_RECOGNIZE, name, dist = self.recognize_face(face_descriptor, DISTANCE_THRESHOLD)
+        IS_RECOGNIZE, name, id, dist = self.recognize_face(face_descriptor, DISTANCE_THRESHOLD)
 
         if IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE:
-            return 1, name, dist
+            return 1, name, id, dist
         else:
             print("No face detected! (IS_PEOPLE and IS_VALIDATE and IS_RECOGNIZE")
-            return -3, None, None
+            return -3, None, None, None
         
 
     def recognize_and_continue_learning(self, frame_2d, frame_3d, DISTANCE_THRESHOLD, LEARNING_THRESHOLD, is_gray = False):
