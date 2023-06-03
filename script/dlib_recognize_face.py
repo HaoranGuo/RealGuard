@@ -575,6 +575,7 @@ class Register_Face:
                     pic_cnt_arr.append(row[4])
                     rts_arr.append(row[5])
                     feature_arr.append(row[6:])
+                    old_feature = np.array(row[6:], dtype=np.float64)
                     if row[0] == name:
                         dist = self.get_euclidean_distance(feature, old_feature)
                         if dist > 0.42:

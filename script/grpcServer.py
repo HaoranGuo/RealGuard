@@ -118,6 +118,9 @@ def serve():
 if __name__ == '__main__':
     DRecFace = dlib_recognize_face.Recognize_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
     DRegFace = dlib_recognize_face.Register_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE, faces_folder)
+    # 生成一张100x100大小的RGB黑色图片
+    black_img = np.zeros((100, 100, 3), dtype=np.uint8)
+    k1, k2, k3 = DRegFace(black_img, 'init_image', 'init_id')
     logging.basicConfig()
     print("Server is running...")
     print("Waiting for client...")
