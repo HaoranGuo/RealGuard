@@ -545,9 +545,15 @@ class Register_Face:
                     csvfile.close()
                     return False, False, -1
                 writer = csv.writer(csvfile)
-                person_info = [name, row_id, added_time, recognized_time, str(pic_cnt), str(recognized_times)]
-                feature = str(feature)
-                person_features = np.insert(feature, 0, person_info, axis=0)
+                feature_str = ''
+                for i in range(len(feature) -1):
+                    feature_str += str(feature[i]) + ','
+                feature_str += str(feature[-1])
+                person_info = str(name) + ',' + str(row_id) + ',' + added_time + ',' + recognized_time + ',' + str(pic_cnt) + ',' + str(recognized_times)
+                # person_info = [str(name), row_id, added_time, recognized_time, str(pic_cnt), str(recognized_times)]
+                # feature = str(feature)
+                # person_features = np.insert(feature, 0, person_info, axis=0)
+                person_features = person_info + ',' + feature_str
                 writer.writerow(person_features)
                 print("Add " + name + " successfully.")
                 csvfile.close()
