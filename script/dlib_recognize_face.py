@@ -290,13 +290,14 @@ class Recognize_Face:
             return -2, None, None, None
 
         # Convert Gray to RGB Using PIL
-        if is_gray:
-            # image = Image.fromarray(frame_2d)
-            # image = image.convert('RGB')
-            image = cv2.cvtColor(frame_2d, cv2.COLOR_GRAY2BGR)
-            image = np.array(image)
-        else:
-            image = frame_2d
+        # if is_gray:
+        #     # image = Image.fromarray(frame_2d)
+        #     # image = image.convert('RGB')
+        #     image = cv2.cvtColor(frame_2d, cv2.COLOR_GRAY2BGR)
+        #     image = np.array(image)
+        # else:
+        #     image = frame_2d
+        image = np.array(frame_2d)
 
         face_descriptor = self.facerec.compute_face_descriptor(image, shape)
         IS_RECOGNIZE, name, id, dist = self.recognize_face(face_descriptor, DISTANCE_THRESHOLD)
