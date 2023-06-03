@@ -558,7 +558,6 @@ class Register_Face:
                 writer.writerow(person_features)
                 print("Add " + name + " successfully.")
                 csvfile.close()
-            self.save_image(image, name)
             return True, True, 0
         else:
             feature = self.get_128d_features_of_face(image)
@@ -603,5 +602,4 @@ class Register_Face:
                         writer.writerow(person_features)
                 print("Update " + name + " successfully.")
                 csvfile.close()
-            self.save_image(image, name)
             return True, False, dist
