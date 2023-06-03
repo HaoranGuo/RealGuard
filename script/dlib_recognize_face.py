@@ -561,6 +561,10 @@ class Register_Face:
             self.save_image(image, name)
             return True, True, 0
         else:
+            feature = self.get_128d_features_of_face(image)
+            if feature == 0:
+                print("No face detected!")
+                return False, False, -1
             with open(self.FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
                 reader = csv.reader(csvfile)
                 for row in reader:
@@ -571,21 +575,18 @@ class Register_Face:
                     pic_cnt_arr.append(row[4])
                     rts_arr.append(row[5])
                     feature_arr.append(row[6:])
+                    if row[0] == name:
+                        dist = self.get_euclidean_distance(feature, old_feature)
+                        if dist > 0.42:
+                            csvfile.close()
+                            return False, False, dist
             with open(self.FACES_FEATURES_CSV_FILE, "w", newline="") as csvfile:
-                feature = self.get_128d_features_of_face(image)
-                if feature == 0:
-                    print("No face detected!")
-                    csvfile.close()
-                    return False, False, -1
                 writer = csv.writer(csvfile)
                 for i in range(len(name_arr)):
                     if name_arr[i] == name:
                         pic_cnt = int(pic_cnt_arr[i])
                         old_feature = np.array(feature_arr[i], dtype=np.float64)
-                        dist = self.get_euclidean_distance(feature, old_feature)
-                        if dist > 0.45:
-                            csvfile.close()
-                            return False, False, dist
+                        
                         added_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                         # 两个feature加权平均
                         new_feature = (feature + old_feature * pic_cnt) / (pic_cnt + 1)
