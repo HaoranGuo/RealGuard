@@ -97,7 +97,7 @@ class register(realGuard_pb2_grpc.registerServicer):
                 dist_ = -1
         else:
             status_ = 200
-            isreg, isnew, dist = DRegFace.register_face(reg_image, candidateName, cadidateId)
+            isreg, isnew, dist = DRegFace.register_face(reg_image, candidateName, cadidateId, isCheck=True)
             dist_ = dist
             
 

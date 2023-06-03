@@ -501,7 +501,7 @@ class Register_Face:
         dist = np.sqrt(feature_sum)
         return dist
     
-    def register_face(self, image, name, id):
+    def register_face(self, image, name, id, isCheck = False):
         is_new = False
         recognized_time = ''
         pic_cnt = 0
@@ -514,22 +514,19 @@ class Register_Face:
         id_arr = []
         pic_cnt_arr = []
         feature_arr = []
+        name_id = name + "(" + id + ")"
         with open(self.FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
-                if row[0] == name:
-                    print(name, " is already in the csv file.")
+                if row[0] == name and row[1] == id:
+                    print(name_id, " is already in the csv file.")
                     row_id = row[1]
-                    if row_id != id:
-                        print("The id is different from the csv file.")
-                        csvfile.close()
-                        return False, False, -1
                     added_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     is_new = False
                     break
             else:
                 is_new = True
-                print(name, " is not in the csv file.")
+                print(name_id, " is not in the csv file.")
                 row_id = id
                 recognized_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 added_time = recognized_time
@@ -537,69 +534,87 @@ class Register_Face:
                 recognized_times = 0
                 csvfile.close()
 
-        if is_new:
-            with open(self.FACES_FEATURES_CSV_FILE, "a", newline="") as csvfile:
+        if not isCheck:
+            if is_new:
+                with open(self.FACES_FEATURES_CSV_FILE, "a", newline="") as csvfile:
+                    feature = self.get_128d_features_of_face(image)
+                    if feature == 0:
+                        print("No face detected!")
+                        csvfile.close()
+                        return False, False, -1
+                    writer = csv.writer(csvfile)
+                    # feature_str = ''
+                    # for i in range(len(feature) -1):
+                    #     feature_str += str(feature[i]) + ','
+                    # feature_str += str(feature[-1])
+                    # person_info = str(name) + ',' + str(row_id) + ',' + added_time + ',' + recognized_time + ',' + str(pic_cnt) + ',' + str(recognized_times)
+                    person_info = [name, row_id, added_time, recognized_time, pic_cnt, recognized_times]
+                    # feature = str(feature)
+                    feature = np.array(feature, dtype=object)
+                    person_features = np.insert(feature, 0, person_info, axis=0)
+                    # person_features = person_info + ',' + feature_str
+                    writer.writerow(person_features)
+                    print("Add " + name_id + " successfully.")
+                    csvfile.close()
+                return True, True, 0
+            else:
                 feature = self.get_128d_features_of_face(image)
                 if feature == 0:
                     print("No face detected!")
-                    csvfile.close()
                     return False, False, -1
-                writer = csv.writer(csvfile)
-                # feature_str = ''
-                # for i in range(len(feature) -1):
-                #     feature_str += str(feature[i]) + ','
-                # feature_str += str(feature[-1])
-                # person_info = str(name) + ',' + str(row_id) + ',' + added_time + ',' + recognized_time + ',' + str(pic_cnt) + ',' + str(recognized_times)
-                person_info = [name, row_id, added_time, recognized_time, pic_cnt, recognized_times]
-                # feature = str(feature)
-                feature = np.array(feature, dtype=object)
-                person_features = np.insert(feature, 0, person_info, axis=0)
-                # person_features = person_info + ',' + feature_str
-                writer.writerow(person_features)
-                print("Add " + name + " successfully.")
-                csvfile.close()
-            return True, True, 0
+                with open(self.FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
+                    reader = csv.reader(csvfile)
+                    for row in reader:
+                        name_arr.append(row[0])
+                        id_arr.append(row[1])
+                        add_arr.append(row[2])
+                        rt_arr.append(row[3])
+                        pic_cnt_arr.append(row[4])
+                        rts_arr.append(row[5])
+                        feature_arr.append(row[6:])
+                        if row[0] == name and row[1] == row_id:
+                            old_feature = np.array(row[6:], dtype=np.float64)
+                            dist = self.get_euclidean_distance(feature, old_feature)
+                            if dist > 0.42:
+                                csvfile.close()
+                                return False, False, dist
+                with open(self.FACES_FEATURES_CSV_FILE, "w", newline="") as csvfile:
+                    writer = csv.writer(csvfile)
+                    for i in range(len(name_arr)):
+                        if name_arr[i] == name and id_arr[i] == row_id:
+                            pic_cnt = int(pic_cnt_arr[i])
+                            old_feature = np.array(feature_arr[i], dtype=np.float64)
+                            
+                            added_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                            # 两个feature加权平均
+                            new_feature = (feature + old_feature * pic_cnt) / (pic_cnt + 1)
+                            pic_cnt += 1
+                            person_info = [name_arr[i], id_arr[i], added_time, rt_arr[i], str(pic_cnt), rts_arr[i]]
+                            # new_feature = str(new_feature)
+                            new_feature = np.array(new_feature, dtype=object)
+                            person_features = np.insert(new_feature, 0, person_info, axis=0)
+                            writer.writerow(person_features)
+                        else:
+                            person_info = [name_arr[i], id_arr[i], add_arr[i], rt_arr[i], pic_cnt_arr[i], rts_arr[i]]
+                            person_features = np.insert(feature_arr[i], 0, person_info, axis=0)
+                            writer.writerow(person_features)
+                    print("Update " + name_id + " successfully.")
+                    csvfile.close()
+                return True, False, dist
+            
         else:
             feature = self.get_128d_features_of_face(image)
             if feature == 0:
                 print("No face detected!")
                 return False, False, -1
             with open(self.FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
-                reader = csv.reader(csvfile)
-                for row in reader:
-                    name_arr.append(row[0])
-                    id_arr.append(row[1])
-                    add_arr.append(row[2])
-                    rt_arr.append(row[3])
-                    pic_cnt_arr.append(row[4])
-                    rts_arr.append(row[5])
-                    feature_arr.append(row[6:])
-                    old_feature = np.array(row[6:], dtype=np.float64)
-                    if row[0] == name:
-                        dist = self.get_euclidean_distance(feature, old_feature)
-                        if dist > 0.42:
+                    reader = csv.reader(csvfile)
+                    for row in reader:
+                        if row[0] == name and row[1] == row_id:
+                            old_feature = np.array(row[6:], dtype=np.float64)
+                            dist = self.get_euclidean_distance(feature, old_feature)
                             csvfile.close()
                             return False, False, dist
-            with open(self.FACES_FEATURES_CSV_FILE, "w", newline="") as csvfile:
-                writer = csv.writer(csvfile)
-                for i in range(len(name_arr)):
-                    if name_arr[i] == name:
-                        pic_cnt = int(pic_cnt_arr[i])
-                        old_feature = np.array(feature_arr[i], dtype=np.float64)
-                        
-                        added_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                        # 两个feature加权平均
-                        new_feature = (feature + old_feature * pic_cnt) / (pic_cnt + 1)
-                        pic_cnt += 1
-                        person_info = [name_arr[i], id_arr[i], added_time, rt_arr[i], str(pic_cnt), rts_arr[i]]
-                        # new_feature = str(new_feature)
-                        new_feature = np.array(new_feature, dtype=object)
-                        person_features = np.insert(new_feature, 0, person_info, axis=0)
-                        writer.writerow(person_features)
                     else:
-                        person_info = [name_arr[i], id_arr[i], add_arr[i], rt_arr[i], pic_cnt_arr[i], rts_arr[i]]
-                        person_features = np.insert(feature_arr[i], 0, person_info, axis=0)
-                        writer.writerow(person_features)
-                print("Update " + name + " successfully.")
-                csvfile.close()
-            return True, False, dist
+                        csvfile.close()
+                        return False, False, 0
