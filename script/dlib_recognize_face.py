@@ -545,15 +545,16 @@ class Register_Face:
                     csvfile.close()
                     return False, False, -1
                 writer = csv.writer(csvfile)
-                feature_str = ''
-                for i in range(len(feature) -1):
-                    feature_str += str(feature[i]) + ','
-                feature_str += str(feature[-1])
-                person_info = str(name) + ',' + str(row_id) + ',' + added_time + ',' + recognized_time + ',' + str(pic_cnt) + ',' + str(recognized_times)
-                # person_info = [str(name), row_id, added_time, recognized_time, str(pic_cnt), str(recognized_times)]
+                # feature_str = ''
+                # for i in range(len(feature) -1):
+                #     feature_str += str(feature[i]) + ','
+                # feature_str += str(feature[-1])
+                # person_info = str(name) + ',' + str(row_id) + ',' + added_time + ',' + recognized_time + ',' + str(pic_cnt) + ',' + str(recognized_times)
+                person_info = [name, row_id, added_time, recognized_time, pic_cnt, recognized_times]
                 # feature = str(feature)
-                # person_features = np.insert(feature, 0, person_info, axis=0)
-                person_features = person_info + ',' + feature_str
+                feature = np.array(feature, dtype=object)
+                person_features = np.insert(feature, 0, person_info, axis=0)
+                # person_features = person_info + ',' + feature_str
                 writer.writerow(person_features)
                 print("Add " + name + " successfully.")
                 csvfile.close()
@@ -590,7 +591,8 @@ class Register_Face:
                         new_feature = (feature + old_feature * pic_cnt) / (pic_cnt + 1)
                         pic_cnt += 1
                         person_info = [name_arr[i], id_arr[i], added_time, rt_arr[i], str(pic_cnt), rts_arr[i]]
-                        new_feature = str(new_feature)
+                        # new_feature = str(new_feature)
+                        new_feature = np.array(new_feature, dtype=object)
                         person_features = np.insert(new_feature, 0, person_info, axis=0)
                         writer.writerow(person_features)
                     else:
