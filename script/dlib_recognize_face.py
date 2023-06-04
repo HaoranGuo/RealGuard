@@ -227,14 +227,16 @@ class Recognize_Face:
             data_list = []
             for i in range(len(database)):
                 person = database[i]
+                i1 = person[0]
+                i2 = person[1]
+                i3 = person[2]
+                i4 = person[3]
+                i5 = person[4]
+                i6 = person[5]
                 if person[0] == name:
                     new_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     new_rtimes = str(int(person[5]) + 1)
-                    i1 = person[0]
-                    i2 = person[1]
-                    i3 = person[2]
                     i4 = new_time
-                    i5 = person[4]
                     i6 = new_rtimes
                     if isWrite:
                         old_feature = person[6]
@@ -251,7 +253,10 @@ class Recognize_Face:
                     data_list.append(new_list)
 
                 else:
-                    data_list.append(person)
+                    i7 = np.array(person[6], dtype=np.float64)
+                    i7 = np.array(i7, dtype=object)
+                    new_list = np.insert(i7, 0, [i1, i2, i3, i4, i5, i6], axis=0)
+                    data_list.append(new_list)
             with open(csv_file, "w", newline="") as csvfile:
                 writer = csv.writer(csvfile)
                 for person in data_list:
@@ -505,21 +510,21 @@ class Recognize_Face:
                             pic_cnt += 1
                             person_info = [name_arr[i], id_arr[i], added_time, recognized_time, str(pic_cnt), rts_arr[i]]
                             # new_feature = str(new_feature)
-                            print(person_info)
+                            # print(person_info)
                             new_feature = np.array(new_feature, dtype=object)
-                            print(new_feature)
+                            # print(new_feature)
                             person_features = np.insert(new_feature, 0, person_info, axis=0)
-                            print(person_features)
+                            # print(person_features)
                             writer.writerow(person_features)
                         else:
                             feature_this = np.array(feature_arr[i], dtype=np.float64)
                             feature_this = feature_this * 1.
                             feature_this = np.array(feature_this, dtype=object)
                             person_info = [name_arr[i], id_arr[i], add_arr[i], rt_arr[i], pic_cnt_arr[i], rts_arr[i]]
-                            print(person_info)
-                            print(feature_this)
+                            # print(person_info)
+                            # print(feature_this)
                             person_features = np.insert(feature_this, 0, person_info, axis=0)
-                            print(person_features)
+                            # print(person_features)
                             writer.writerow(person_features)
                     print("Update " + name_id + " successfully.")
                     csvfile.close()
