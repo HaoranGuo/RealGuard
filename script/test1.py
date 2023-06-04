@@ -16,5 +16,5 @@ image = np.array(image)
 isreg, isnew, dist = DRecFace.register_face(image, 'ghr', '002')
 print(dist)
 
-isreg, isnew, dist = DRecFace.register_face(image, 'ghr', '002')
-print(dist)
+# isreg, isnew, dist = DRecFace.register_face(image, 'ghr', '002')
+# print(dist)

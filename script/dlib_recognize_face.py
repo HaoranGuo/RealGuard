@@ -503,15 +503,21 @@ class Recognize_Face:
                             pic_cnt += 1
                             person_info = [name_arr[i], id_arr[i], added_time, recognized_time, str(pic_cnt), rts_arr[i]]
                             # new_feature = str(new_feature)
+                            print(person_info)
                             new_feature = np.array(new_feature, dtype=object)
+                            print(new_feature)
                             person_features = np.insert(new_feature, 0, person_info, axis=0)
+                            print(person_features)
                             writer.writerow(person_features)
                         else:
                             feature_this = np.array(feature_arr[i], dtype=np.float64)
                             feature_this = feature_this * 1.
                             feature_this = np.array(feature_this, dtype=object)
                             person_info = [name_arr[i], id_arr[i], add_arr[i], rt_arr[i], pic_cnt_arr[i], rts_arr[i]]
+                            print(person_info)
+                            print(feature_this)
                             person_features = np.insert(feature_this, 0, person_info, axis=0)
+                            print(person_features)
                             writer.writerow(person_features)
                     print("Update " + name_id + " successfully.")
                     csvfile.close()
