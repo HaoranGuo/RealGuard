@@ -241,10 +241,12 @@ class Recognize_Face:
                         old_feature = np.array(old_feature, dtype=np.float64)
                         weight = (1 - dist) / 15
                         new_feature = old_feature * (1 - weight) + np.array(face_descriptor) * weight
-                        new_feature = new_feature.tolist()
-                        new_list = [i1, i2, i3, i4, i5, i6] + new_feature
+                        # new_feature = new_feature.tolist()
+                        new_feature = np.array(new_feature, dtype=object)
+                        new_list = np.insert(new_feature, 0, [i1, i2, i3, i4, i5, i6], axis=0)
                     else:
-                        i7 = np.array(person[6])
+                        i7 = np.array(person[6], dtype=np.float64)
+                        i7 = np.array(i7, dtype=object)
                         new_list = np.insert(i7, 0, [i1, i2, i3, i4, i5, i6], axis=0)
                     data_list.append(new_list)
 
