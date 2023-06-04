@@ -7,11 +7,12 @@ import os
 import time
 
 class Recognize_Face:
-    def __init__(self, CNN_DETECT_MODEL, LANDMARKS_MODEL, ROCOGNITION_RESNET_MODEL, FACES_FEATURES_CSV_FILE):
+    def __init__(self, CNN_DETECT_MODEL, LANDMARKS_MODEL, ROCOGNITION_RESNET_MODEL, FACES_FEATURES_CSV_FILE, FACES_FOLDER):
         self.detector = dlib.cnn_face_detection_model_v1(CNN_DETECT_MODEL)
         self.predictor = dlib.shape_predictor(LANDMARKS_MODEL)
         self.facerec = dlib.face_recognition_model_v1(ROCOGNITION_RESNET_MODEL)
         self.FACES_FEATURES_CSV_FILE = FACES_FEATURES_CSV_FILE
+        self.FACES_FOLDER = FACES_FOLDER
         self.DEPTH_SCALE = 0.001
 
         # 分割出csv文件的路径和文件名
@@ -19,6 +20,9 @@ class Recognize_Face:
         # 如果csv所在的目录不存在，创建目录
         if not os.path.isdir(csv_path):
             os.makedirs(csv_path)
+
+        if not os.path.isdir(self.FACES_FOLDER):
+            os.makedirs(self.FACES_FOLDER)
 
 
     def find_depth_from(self, depth_image, depth_scale, face, markup_from, markup_to):
@@ -385,127 +389,6 @@ class Recognize_Face:
         return image
 
 
-class Extract_Face_Feature:
-    def __init__(self, LANDMARKS_MODEL, ROCOGNITION_RESNET_MODEL, FACES_FOLDER, FACES_FEATURES_CSV_FILE):
-        self.FACES_FOLDER = FACES_FOLDER
-        self.FACES_FEATURES_CSV_FILE = FACES_FEATURES_CSV_FILE
-        self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(LANDMARKS_MODEL)
-        self.facerec = dlib.face_recognition_model_v1(ROCOGNITION_RESNET_MODEL)
-        if not os.path.isdir(self.FACES_FOLDER):
-            os.makedirs(self.FACES_FOLDER)
-        csv_path, csv_name = os.path.split(self.FACES_FEATURES_CSV_FILE)
-        # 如果csv所在的目录不存在，创建目录
-        if not os.path.isdir(csv_path):
-            os.makedirs(csv_path)
-
-
-    def get_128d_features_of_face(self, image_path):
-        # image = dlib.load_rgb_image(image_path)
-        # image = Image.open(image_path)
-        image = cv2.imread(image_path)
-        image = np.array(image)
-        faces = self.detector(image, 1)
-
-        if len(faces) != 0:
-            shape = self.predictor(image, faces[0])
-            face_descriptor = self.facerec.compute_face_descriptor(image, shape)
-        else:
-            face_descriptor = 0
-        return face_descriptor
-
-
-    def get_mean_features_of_face(self, path):
-        path = os.path.abspath(path)
-        subDirs = [os.path.join(path, f) for f in os.listdir(path)]
-        subDirs = list(filter(lambda x:os.path.isdir(x), subDirs))
-        for index in range(0, len(subDirs)):
-            subDir = subDirs[index]
-            person_label = os.path.split(subDir)[-1]
-            image_paths = [os.path.join(subDir, f) for f in os.listdir(subDir)]
-            image_paths = list(filter(lambda x:os.path.isfile(x), image_paths))
-            feature_list_of_person_x = []
-            for image_path in image_paths:
-                # 计算每一个图片的特征
-                feature = self.get_128d_features_of_face(image_path)
-                if feature == 0:
-                    continue
-                
-                feature_list_of_person_x.append(feature)
-            
-            # 计算当前人脸的平均特征
-            features_mean_person_x = np.zeros(128, dtype=object, order='C')
-            if feature_list_of_person_x:
-                features_mean_person_x = np.array(feature_list_of_person_x, dtype=object).mean(axis=0)
-            
-            yield (features_mean_person_x, person_label)
-
-
-    def extract_features_to_csv(self, faces_dir, FACES_FEATURES_CSV_FILE):
-        mean_features_list = list(self.get_mean_features_of_face(faces_dir))
-        with open(FACES_FEATURES_CSV_FILE, "w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            for mean_features in mean_features_list:
-                person_features = mean_features[0]
-                person_label = mean_features[1]
-                person_features = np.insert(person_features, 0, person_label, axis=0)
-                writer.writerow(person_features)
-
-    def extract_features(self):
-        self.extract_features_to_csv(self.FACES_FOLDER, self.FACES_FEATURES_CSV_FILE)
-
-
-    def add_face_features(self, FACES_FEATURES_CSV_FILE, path):
-        path = os.path.abspath(path)
-        for f in os.listdir(path):
-            subDir = os.path.join(path, f)
-            if not os.path.isdir(subDir):
-                continue
-            # 读取FACES_FEATURES_CSV_FILE中的人名，如果已经存在，则不再添加
-            with open(FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
-                reader = csv.reader(csvfile)
-                person_names = [row[0] for row in reader]
-            if f in person_names:
-                continue
-            else:
-                person_label = os.path.split(subDir)[-1]
-                image_paths = [os.path.join(subDir, f) for f in os.listdir(subDir)]
-                image_paths = list(filter(lambda x:os.path.isfile(x), image_paths))
-                feature_list_of_person_x = []
-                for image_path in image_paths:
-                    # 计算每一个图片的特征
-                    feature = self.get_128d_features_of_face(image_path)
-                    if feature == 0:
-                        continue
-                    
-                    feature_list_of_person_x.append(feature)
-
-                # 计算当前人脸的平均特征
-                features_mean_person_x = np.zeros(128, dtype=object, order='C')
-                if feature_list_of_person_x:
-                    features_mean_person_x = np.array(feature_list_of_person_x, dtype=object).mean(axis=0)
-
-                with open(FACES_FEATURES_CSV_FILE, "a", newline="") as csvfile:
-                    writer = csv.writer(csvfile)
-                    person_features = features_mean_person_x
-                    person_label = person_label
-                    person_features = np.insert(person_features, 0, person_label, axis=0)
-                    writer.writerow(person_features)
-
-    def add_face(self):
-        self.add_face_features(self.FACES_FEATURES_CSV_FILE, self.FACES_FOLDER)
-
-
-class Register_Face:
-    def __init__(self, CNN_DETECT_MODEL, LANDMARKS_MODEL, ROCOGNITION_RESNET_MODEL, FACES_FEATURES_CSV_FILE, FACES_FOLDER):
-        self.detector = dlib.cnn_face_detection_model_v1(CNN_DETECT_MODEL)
-        self.predictor = dlib.shape_predictor(LANDMARKS_MODEL)
-        self.facerec = dlib.face_recognition_model_v1(ROCOGNITION_RESNET_MODEL)
-        self.FACES_FEATURES_CSV_FILE = FACES_FEATURES_CSV_FILE
-        self.FACES_FOLDER = FACES_FOLDER
-        if not os.path.isdir(self.FACES_FOLDER):
-            os.makedirs(self.FACES_FOLDER)
-    
     def save_image(self, image, name):
         abs_path = os.path.abspath(self.FACES_FOLDER)
         image_path = os.path.join(abs_path, name)
@@ -515,7 +398,8 @@ class Register_Face:
         image_name = str(current_time) + ".jpg"
         image_path = os.path.join(image_path, image_name)
         cv2.imwrite(image_path, image)
-    
+
+
     def get_128d_features_of_face(self, image):
         image = np.array(image)
         faces = self.detector(image, 1)
@@ -526,20 +410,8 @@ class Register_Face:
         else:
             face_descriptor = 0
         return face_descriptor
-
-    def get_euclidean_distance(self, feature_1, feature_2):
-        feature_1 = np.array(feature_1)
-        # 将feature_2转换为float64类型
-        feature_2 = np.array(feature_2, dtype=np.float64)
-        feature_sum = 0
-        for i in range(len(feature_1)):
-            feature_1[i] = float(feature_1[i])
-            feature_2[i] = float(feature_2[i])
-            feature_sq = (feature_1[i] - feature_2[i]) ** 2
-            feature_sum += feature_sq
-        dist = np.sqrt(feature_sum)
-        return dist
     
+
     def register_face(self, image, name, id, isCheck = False):
         is_new = False
         recognized_time = ''
@@ -658,3 +530,278 @@ class Register_Face:
                     else:
                         csvfile.close()
                         return False, False, 0
+
+
+class Extract_Face_Feature:
+    def __init__(self, LANDMARKS_MODEL, ROCOGNITION_RESNET_MODEL, FACES_FOLDER, FACES_FEATURES_CSV_FILE):
+        self.FACES_FOLDER = FACES_FOLDER
+        self.FACES_FEATURES_CSV_FILE = FACES_FEATURES_CSV_FILE
+        self.detector = dlib.get_frontal_face_detector()
+        self.predictor = dlib.shape_predictor(LANDMARKS_MODEL)
+        self.facerec = dlib.face_recognition_model_v1(ROCOGNITION_RESNET_MODEL)
+        if not os.path.isdir(self.FACES_FOLDER):
+            os.makedirs(self.FACES_FOLDER)
+        csv_path, csv_name = os.path.split(self.FACES_FEATURES_CSV_FILE)
+        # 如果csv所在的目录不存在，创建目录
+        if not os.path.isdir(csv_path):
+            os.makedirs(csv_path)
+
+
+    def get_128d_features_of_face(self, image_path):
+        # image = dlib.load_rgb_image(image_path)
+        # image = Image.open(image_path)
+        image = cv2.imread(image_path)
+        image = np.array(image)
+        faces = self.detector(image, 1)
+
+        if len(faces) != 0:
+            shape = self.predictor(image, faces[0])
+            face_descriptor = self.facerec.compute_face_descriptor(image, shape)
+        else:
+            face_descriptor = 0
+        return face_descriptor
+
+
+    def get_mean_features_of_face(self, path):
+        path = os.path.abspath(path)
+        subDirs = [os.path.join(path, f) for f in os.listdir(path)]
+        subDirs = list(filter(lambda x:os.path.isdir(x), subDirs))
+        for index in range(0, len(subDirs)):
+            subDir = subDirs[index]
+            person_label = os.path.split(subDir)[-1]
+            image_paths = [os.path.join(subDir, f) for f in os.listdir(subDir)]
+            image_paths = list(filter(lambda x:os.path.isfile(x), image_paths))
+            feature_list_of_person_x = []
+            for image_path in image_paths:
+                # 计算每一个图片的特征
+                feature = self.get_128d_features_of_face(image_path)
+                if feature == 0:
+                    continue
+                
+                feature_list_of_person_x.append(feature)
+            
+            # 计算当前人脸的平均特征
+            features_mean_person_x = np.zeros(128, dtype=object, order='C')
+            if feature_list_of_person_x:
+                features_mean_person_x = np.array(feature_list_of_person_x, dtype=object).mean(axis=0)
+            
+            yield (features_mean_person_x, person_label)
+
+
+    def extract_features_to_csv(self, faces_dir, FACES_FEATURES_CSV_FILE):
+        mean_features_list = list(self.get_mean_features_of_face(faces_dir))
+        with open(FACES_FEATURES_CSV_FILE, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            for mean_features in mean_features_list:
+                person_features = mean_features[0]
+                person_label = mean_features[1]
+                person_features = np.insert(person_features, 0, person_label, axis=0)
+                writer.writerow(person_features)
+
+    def extract_features(self):
+        self.extract_features_to_csv(self.FACES_FOLDER, self.FACES_FEATURES_CSV_FILE)
+
+
+    def add_face_features(self, FACES_FEATURES_CSV_FILE, path):
+        path = os.path.abspath(path)
+        for f in os.listdir(path):
+            subDir = os.path.join(path, f)
+            if not os.path.isdir(subDir):
+                continue
+            # 读取FACES_FEATURES_CSV_FILE中的人名，如果已经存在，则不再添加
+            with open(FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
+                reader = csv.reader(csvfile)
+                person_names = [row[0] for row in reader]
+            if f in person_names:
+                continue
+            else:
+                person_label = os.path.split(subDir)[-1]
+                image_paths = [os.path.join(subDir, f) for f in os.listdir(subDir)]
+                image_paths = list(filter(lambda x:os.path.isfile(x), image_paths))
+                feature_list_of_person_x = []
+                for image_path in image_paths:
+                    # 计算每一个图片的特征
+                    feature = self.get_128d_features_of_face(image_path)
+                    if feature == 0:
+                        continue
+                    
+                    feature_list_of_person_x.append(feature)
+
+                # 计算当前人脸的平均特征
+                features_mean_person_x = np.zeros(128, dtype=object, order='C')
+                if feature_list_of_person_x:
+                    features_mean_person_x = np.array(feature_list_of_person_x, dtype=object).mean(axis=0)
+
+                with open(FACES_FEATURES_CSV_FILE, "a", newline="") as csvfile:
+                    writer = csv.writer(csvfile)
+                    person_features = features_mean_person_x
+                    person_label = person_label
+                    person_features = np.insert(person_features, 0, person_label, axis=0)
+                    writer.writerow(person_features)
+
+    def add_face(self):
+        self.add_face_features(self.FACES_FEATURES_CSV_FILE, self.FACES_FOLDER)
+
+
+# class Register_Face:
+#     def __init__(self, CNN_DETECT_MODEL, LANDMARKS_MODEL, ROCOGNITION_RESNET_MODEL, FACES_FEATURES_CSV_FILE, FACES_FOLDER):
+#         self.detector = dlib.cnn_face_detection_model_v1(CNN_DETECT_MODEL)
+#         self.predictor = dlib.shape_predictor(LANDMARKS_MODEL)
+#         self.facerec = dlib.face_recognition_model_v1(ROCOGNITION_RESNET_MODEL)
+#         self.FACES_FEATURES_CSV_FILE = FACES_FEATURES_CSV_FILE
+#         self.FACES_FOLDER = FACES_FOLDER
+#         if not os.path.isdir(self.FACES_FOLDER):
+#             os.makedirs(self.FACES_FOLDER)
+    
+#     def save_image(self, image, name):
+#         abs_path = os.path.abspath(self.FACES_FOLDER)
+#         image_path = os.path.join(abs_path, name)
+#         if not os.path.isdir(image_path):
+#             os.makedirs(image_path)
+#         current_time = time.time()
+#         image_name = str(current_time) + ".jpg"
+#         image_path = os.path.join(image_path, image_name)
+#         cv2.imwrite(image_path, image)
+    
+#     def get_128d_features_of_face(self, image):
+#         image = np.array(image)
+#         faces = self.detector(image, 1)
+
+#         if len(faces) != 0:
+#             shape = self.predictor(image, faces[0].rect)
+#             face_descriptor = self.facerec.compute_face_descriptor(image, shape)
+#         else:
+#             face_descriptor = 0
+#         return face_descriptor
+
+#     def get_euclidean_distance(self, feature_1, feature_2):
+#         feature_1 = np.array(feature_1)
+#         # 将feature_2转换为float64类型
+#         feature_2 = np.array(feature_2, dtype=np.float64)
+#         feature_sum = 0
+#         for i in range(len(feature_1)):
+#             feature_1[i] = float(feature_1[i])
+#             feature_2[i] = float(feature_2[i])
+#             feature_sq = (feature_1[i] - feature_2[i]) ** 2
+#             feature_sum += feature_sq
+#         dist = np.sqrt(feature_sum)
+#         return dist
+    
+#     def register_face(self, image, name, id, isCheck = False):
+#         is_new = False
+#         recognized_time = ''
+#         pic_cnt = 0
+#         recognized_times = 0
+#         feature = 0
+#         rt_arr = []
+#         rts_arr = []
+#         add_arr = []
+#         name_arr = []
+#         id_arr = []
+#         pic_cnt_arr = []
+#         feature_arr = []
+#         name_id = name + "(" + id + ")"
+#         with open(self.FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
+#             reader = csv.reader(csvfile)
+#             for row in reader:
+#                 if row[0] == name and row[1] == id:
+#                     print(name_id, " is already in the csv file.")
+#                     row_id = row[1]
+#                     added_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+#                     is_new = False
+#                     break
+#             else:
+#                 is_new = True
+#                 print(name_id, " is not in the csv file.")
+#                 row_id = id
+#                 recognized_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+#                 added_time = recognized_time
+#                 pic_cnt = 1
+#                 recognized_times = 0
+#                 csvfile.close()
+
+#         if not isCheck:
+#             if is_new:
+#                 with open(self.FACES_FEATURES_CSV_FILE, "a", newline="") as csvfile:
+#                     feature = self.get_128d_features_of_face(image)
+#                     if feature == 0:
+#                         print("No face detected!")
+#                         csvfile.close()
+#                         return False, False, -1
+#                     writer = csv.writer(csvfile)
+#                     # feature_str = ''
+#                     # for i in range(len(feature) -1):
+#                     #     feature_str += str(feature[i]) + ','
+#                     # feature_str += str(feature[-1])
+#                     # person_info = str(name) + ',' + str(row_id) + ',' + added_time + ',' + recognized_time + ',' + str(pic_cnt) + ',' + str(recognized_times)
+#                     person_info = [name, row_id, added_time, recognized_time, pic_cnt, recognized_times]
+#                     # feature = str(feature)
+#                     feature = np.array(feature, dtype=object)
+#                     person_features = np.insert(feature, 0, person_info, axis=0)
+#                     # person_features = person_info + ',' + feature_str
+#                     writer.writerow(person_features)
+#                     print("Add " + name_id + " successfully.")
+#                     csvfile.close()
+#                 return True, True, 0
+#             else:
+#                 feature = self.get_128d_features_of_face(image)
+#                 if feature == 0:
+#                     print("No face detected!")
+#                     return False, False, -1
+#                 with open(self.FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
+#                     reader = csv.reader(csvfile)
+#                     for row in reader:
+#                         name_arr.append(row[0])
+#                         id_arr.append(row[1])
+#                         add_arr.append(row[2])
+#                         rt_arr.append(row[3])
+#                         pic_cnt_arr.append(row[4])
+#                         rts_arr.append(row[5])
+#                         feature_arr.append(row[6:])
+#                         if row[0] == name and row[1] == row_id:
+#                             old_feature = np.array(row[6:], dtype=np.float64)
+#                             dist = self.get_euclidean_distance(feature, old_feature)
+#                             if dist > 0.42:
+#                                 csvfile.close()
+#                                 return False, False, dist
+#                 with open(self.FACES_FEATURES_CSV_FILE, "w", newline="") as csvfile:
+#                     writer = csv.writer(csvfile)
+#                     for i in range(len(name_arr)):
+#                         if name_arr[i] == name and id_arr[i] == row_id:
+#                             pic_cnt = int(pic_cnt_arr[i])
+#                             old_feature = np.array(feature_arr[i], dtype=np.float64)
+                            
+#                             added_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+#                             recognized_time = added_time
+#                             # 两个feature加权平均
+#                             new_feature = (feature + old_feature * pic_cnt) / (pic_cnt + 1)
+#                             pic_cnt += 1
+#                             person_info = [name_arr[i], id_arr[i], added_time, recognized_time, str(pic_cnt), rts_arr[i]]
+#                             # new_feature = str(new_feature)
+#                             new_feature = np.array(new_feature, dtype=object)
+#                             person_features = np.insert(new_feature, 0, person_info, axis=0)
+#                             writer.writerow(person_features)
+#                         else:
+#                             person_info = [name_arr[i], id_arr[i], add_arr[i], rt_arr[i], pic_cnt_arr[i], rts_arr[i]]
+#                             person_features = np.insert(feature_arr[i], 0, person_info, axis=0)
+#                             writer.writerow(person_features)
+#                     print("Update " + name_id + " successfully.")
+#                     csvfile.close()
+#                 return True, False, dist
+            
+#         else:
+#             feature = self.get_128d_features_of_face(image)
+#             if feature == 0:
+#                 print("No face detected!")
+#                 return False, False, -1
+#             with open(self.FACES_FEATURES_CSV_FILE, "r", newline="") as csvfile:
+#                     reader = csv.reader(csvfile)
+#                     for row in reader:
+#                         if row[0] == name and row[1] == row_id:
+#                             old_feature = np.array(row[6:], dtype=np.float64)
+#                             dist = self.get_euclidean_distance(feature, old_feature)
+#                             csvfile.close()
+#                             return False, False, dist
+#                     else:
+#                         csvfile.close()
+#                         return False, False, 0

@@ -85,7 +85,7 @@ class register(realGuard_pb2_grpc.registerServicer):
             # 如果为灰度图则转为RGB
             if len(reg_image.shape) == 2:
                 reg_image = cv2.cvtColor(reg_image, cv2.COLOR_GRAY2RGB)
-            isreg, isnew, dist = DRegFace.register_face(reg_image, candidateName, cadidateId)
+            isreg, isnew, dist = DRecFace.register_face(reg_image, candidateName, cadidateId)
             #logic to be compeleted
             if isreg:
                 if isnew:
@@ -94,13 +94,13 @@ class register(realGuard_pb2_grpc.registerServicer):
                 else:
                     status_ = 101
                     dist_ = dist
-                DRegFace.save_image(reg_image, candidateName)
+                DRecFace.save_image(reg_image, candidateName)
             else:
                 status_ = 400
                 dist_ = -1
         else:
             status_ = 200
-            isreg, isnew, dist = DRegFace.register_face(reg_image, candidateName, cadidateId, isCheck=True)
+            isreg, isnew, dist = DRecFace.register_face(reg_image, candidateName, cadidateId, isCheck=True)
             dist_ = dist
             
 
@@ -127,8 +127,8 @@ def serve():
 
 
 if __name__ == '__main__':
-    DRecFace = dlib_recognize_face.Recognize_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE)
-    DRegFace = dlib_recognize_face.Register_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE, faces_folder)
+    DRecFace = dlib_recognize_face.Recognize_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE, faces_folder)
+    # DRegFace = dlib_recognize_face.Register_Face(detect_path, predictor_path, face_rec_model_path, FACES_FEATURES_CSV_FILE, faces_folder)
     logging.basicConfig()
     print("Server is running...")
     print("Waiting for client...")
