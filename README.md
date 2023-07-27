@@ -1,5 +1,5 @@
 # RealGuard
-> This is a backend project for face detection and recognition. The frontend project is still under development.
+> This is a backend project for face detection and recognition. The frontend project is [RealGuard-Frontend](https://github.com/HuXioAn/RealGuard-Frontend).
 <p>
 This project is aimed to provide a real-time face detection and recognition system for security purpose such as door access control. This project is based on <a href="http://dlib.net/">dlib</a> and <a href="http://opencv.org/">OpenCv</a>.
 </p>
