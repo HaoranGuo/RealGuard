@@ -1,7 +1,7 @@
 # RealGuard
 > This is a backend project for face detection and recognition. The frontend project is [RealGuard-Frontend](https://github.com/HuXioAn/RealGuard-Frontend).
 <p>
-This project is aimed to provide a real-time face detection and recognition system for security purpose such as door access control. This project is based on <a href="http://dlib.net/">dlib</a> and <a href="http://opencv.org/">OpenCv</a>.
+This project is aimed to provide a real-time face detection and recognition system for security purpose such as door access control. This project is based on <a href="http://dlib.net/">dlib</a> and <a href="http://opencv.org/">OpenCV</a>.
 </p>
 <p>
 You can start the program with a RGBD camera (we use Realsense D435 and D430) or other camera that can generate both 2D and 3D images. Because of the lack of the depth information, 3D images are only used for face validation, which means that the program will judge whether the face is from a real person or a photo. If you don't have a RGBD camera, you can also use a normal camera to start the program, but the face validation will be skipped.
